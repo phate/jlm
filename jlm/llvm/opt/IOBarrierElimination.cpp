@@ -107,30 +107,78 @@ class IOBarrierElimination::Context
 public:
   /**
    * Mark \p output as dereferenceable with size \p sizeInBytes.
+   * Marking is for permanent guarantees, and can never be undone.
+   * For speculative sizes, see \ref setDerviedDereferenceableSize()
    */
   void
   markDereferenceable(const rvsdg::Output & output, const size_t sizeInBytes)
   {
-    if (const auto it = dereferenceableInputs_.find(&output); it == dereferenceableInputs_.end())
-    {
-      dereferenceableInputs_[&output] = sizeInBytes;
-    }
-    else
-    {
-      dereferenceableInputs_[&output] = std::max(it->second, sizeInBytes);
-    }
+    auto & marked = markedDereferencable_[&output];
+    marked = std::max(marked, sizeInBytes);
   }
 
   /**
-   * @return The size in bytes. If \p output was not marked as dereferenceable, then 0 is returned.
+   * Used during the marking phase.
+   * @return the size in bytes the given output has been marked as dereferencable, or 0.
+   */
+  size_t
+  getMarkedDereferenceableSize(const rvsdg::Output & output)
+  {
+    auto it = markedDereferencable_.find(&output);
+    if (it != markedDereferencable_.end())
+      return it->second;
+    return 0;
+  }
+
+  /**
+   * Used during the propagation phase.
+   * Sets a derived estimate for the dereferencable \p sizeInBytes for the given \p output.
+   * Subsequent estimates can only make the derived dereferencable size smaller.
+   * If the \p output has been marked as dereferencable up to a certain size,
+   * that gives a lower bound for the estimated derferencable size.
+   *
+   * @return true if the derived dereferencable size changed in this operation.
+   */
+  bool
+  setDerivedDereferenceableSize(const rvsdg::Output & output, size_t sizeInBytes)
+  {
+    auto [it, inserted] = derivedDereferencable_.insert({ &output, 0 });
+
+    // Ensure the estimated dereferencable size never grows
+    if (!inserted && sizeInBytes >= it->second)
+      return false;
+
+    // Ensure the dervied size is no smaller than the marked size
+    auto markedSize = markedDereferencable_.find(&output);
+    if (markedSize != markedDereferencable_.end())
+    {
+      sizeInBytes = std::max(markedSize->second, sizeInBytes);
+
+      // Check again if the sizeInBytes is larger than the existing estimate
+      if (!inserted && sizeInBytes >= it->second)
+        return false;
+    }
+
+    it->second = sizeInBytes;
+    return true;
+  }
+
+  /**
+   * Used during the propagation phase.
+   * Get the dervied dereferencable size for the given \p output.
+   * If no derived dereferenable size has been set, the marked size is used, or 0.
+   * @param output the pointer value in question
+   * @return the size in bytes that the output is believed to be dereferencable
    */
   [[nodiscard]] size_t
-  getDereferenceableSize(const rvsdg::Output & output) const
+  getDerivedDereferenceableSize(const rvsdg::Output & output)
   {
-    const auto it = dereferenceableInputs_.find(&output);
-    if (it == dereferenceableInputs_.end())
-      return 0;
-
+    auto [it, inserted] = derivedDereferencable_.insert({ &output, 0 });
+    if (inserted)
+    {
+      // Fall back to using the marked derferencable size, if any
+      it->second = getMarkedDereferenceableSize(output);
+    }
     return it->second;
   }
 
@@ -141,7 +189,18 @@ public:
   }
 
 private:
-  std::unordered_map<const rvsdg::Output *, size_t> dereferenceableInputs_{};
+  // Assigned during the marking phase, for pointers provably dereferencable up to a given size,
+  // within the output's region and its subregions.
+  // If the dereferencable size of an output is updated, it only grows.
+  std::unordered_map<const rvsdg::Output *, size_t> markedDereferencable_{};
+
+  // Assigned during the propagation phase.
+  // If a pointer is already marked as dereferencable, the marked size becomes
+  // a lower bound for the derived dereferencable size.
+  // Once a derferencable size has been derived for a pointer, it can only shrink.
+  // This allows the dereferencable size to be speculatively over-estimated in loops,
+  // as long as the loop body gets re-propagated later with corrected sizes.
+  std::unordered_map<const rvsdg::Output *, size_t> derivedDereferencable_{};
 };
 
 IOBarrierElimination::~IOBarrierElimination() = default;
@@ -306,7 +365,8 @@ IOBarrierElimination::normalizeMemoryHoistBarriers(rvsdg::Region & region)
 }
 
 size_t
-IOBarrierElimination::getDereferenceableSize(const rvsdg::GammaNode::EntryVar & entryVar) const
+IOBarrierElimination::getMarkedDereferenceableSize(
+    const rvsdg::GammaNode::EntryVar & entryVar) const
 {
   // We only care about pointer entry variables
   if (!rvsdg::is<PointerType>(entryVar.input->Type()))
@@ -321,7 +381,7 @@ IOBarrierElimination::getDereferenceableSize(const rvsdg::GammaNode::EntryVar & 
       return 0;
     }
 
-    if (auto argumentSize = context_->getDereferenceableSize(*argument); argumentSize > 0)
+    if (auto argumentSize = context_->getMarkedDereferenceableSize(*argument); argumentSize > 0)
     {
       // The user is marked. Let's take the minimum marked size between this argument and all
       // other arguments.
@@ -357,7 +417,7 @@ IOBarrierElimination::getDereferenceableSize(const rvsdg::GammaNode::EntryVar & 
         return 0;
       }
 
-      argumentSize = context_->getDereferenceableSize(
+      argumentSize = context_->getMarkedDereferenceableSize(
           MemoryHoistBarrierOperation::getAddressOutput(*hoistBarrierNode));
       if (argumentSize == 0)
       {
@@ -429,7 +489,7 @@ IOBarrierElimination::markOutputs(rvsdg::Region & region)
           {
             for (auto & entryVar : gammaNode.GetEntryVars())
             {
-              if (const auto size = getDereferenceableSize(entryVar); size > 0)
+              if (const auto size = getMarkedDereferenceableSize(entryVar); size > 0)
               {
                 // All gamma node arguments of this entry variable are marked. This means that
                 // on every path through this gamma node, the pointer variable is at least
@@ -489,19 +549,22 @@ IOBarrierElimination::propagateSize(rvsdg::Graph & graph)
           },
           [&](rvsdg::GammaNode & gammaNode)
           {
+            bool anyChanges = false;
+
             for (auto & [input, arguments] : gammaNode.GetEntryVars())
             {
               if (!is<PointerType>(input->Type()))
                 continue;
 
-              if (const auto size = context_->getDereferenceableSize(*input->origin()); size > 0)
+              auto size = context_->getDerivedDereferenceableSize(*input->origin());
+              for (const auto & argument : arguments)
               {
-                for (const auto & argument : arguments)
-                {
-                  context_->markDereferenceable(*argument, size);
-                }
+                anyChanges |= context_->setDerivedDereferenceableSize(*argument, size);
               }
             }
+
+            if (!anyChanges)
+              return;
 
             for (auto & subregion : gammaNode.Subregions())
               propagate(subregion);
@@ -514,22 +577,20 @@ IOBarrierElimination::propagateSize(rvsdg::Graph & graph)
               size_t sizeInBytes = std::numeric_limits<std::size_t>::max();
               for (const auto & result : results)
               {
-                sizeInBytes =
-                    std::min(sizeInBytes, context_->getDereferenceableSize(*result->origin()));
+                sizeInBytes = std::min(
+                    sizeInBytes,
+                    context_->getDerivedDereferenceableSize(*result->origin()));
                 if (sizeInBytes == 0)
-                {
                   break;
-                }
               }
-              if (sizeInBytes > 0)
-                context_->markDereferenceable(*output, sizeInBytes);
+              context_->setDerivedDereferenceableSize(*output, sizeInBytes);
             }
           },
           [&](rvsdg::ThetaNode & thetaNode)
           {
             // FIXME: This fix-point algorithm could be improved in terms of performance.
 
-            std::unordered_map<rvsdg::Output *, size_t> loopVarPreSizes;
+            bool anyChanges = false;
 
             // Mark loop variables in subregion
             for (const auto & loopVar : thetaNode.GetLoopVars())
@@ -537,48 +598,35 @@ IOBarrierElimination::propagateSize(rvsdg::Graph & graph)
               if (!is<PointerType>(loopVar.input->Type()))
                 continue;
 
-              if (const auto inputSize = context_->getDereferenceableSize(*loopVar.input->origin());
-                  inputSize > 0)
+              auto inSize = context_->getDerivedDereferenceableSize(*loopVar.input->origin());
+              anyChanges |= context_->setDerivedDereferenceableSize(*loopVar.pre, inSize);
+            }
+
+            while (anyChanges)
+            {
+              propagate(*thetaNode.subregion());
+              anyChanges = false;
+
+              // Use the derived derferencable sizes of the loop variable posts to update
+              // the estimated derived derferenable sizes of the loop variable pres
+              for (const auto & loopVar : thetaNode.GetLoopVars())
               {
-                loopVarPreSizes[loopVar.pre] = inputSize;
-                context_->markDereferenceable(*loopVar.pre, inputSize);
+                if (!is<PointerType>(loopVar.post->Type()))
+                  continue;
+
+                auto postSize = context_->getDerivedDereferenceableSize(*loopVar.post->origin());
+                anyChanges |= context_->setDerivedDereferenceableSize(*loopVar.pre, postSize);
               }
             }
 
-            // Propagate information through loop until fix-point is reached
-            bool repeat = false;
-            do
-            {
-              repeat = false;
-              propagate(*thetaNode.subregion());
-
-              for (const auto & loopVar : thetaNode.GetLoopVars())
-              {
-                if (!is<PointerType>(loopVar.input->Type()))
-                  continue;
-
-                const auto preSize = loopVarPreSizes[loopVar.pre];
-                const auto postSize = context_->getDereferenceableSize(*loopVar.post->origin());
-                if (preSize != postSize)
-                {
-                  loopVarPreSizes[loopVar.pre] = postSize;
-                  context_->markDereferenceable(*loopVar.pre, std::min(preSize, postSize));
-                  repeat = true;
-                }
-              }
-            } while (repeat);
-
-            // Mark loop outputs
+            // Loop outputs should get the same dereferencable size as the post origins
             for (const auto & loopVar : thetaNode.GetLoopVars())
             {
               if (!is<PointerType>(loopVar.output->Type()))
                 continue;
 
-              if (const auto postSize = context_->getDereferenceableSize(*loopVar.post->origin());
-                  postSize > 0)
-              {
-                context_->markDereferenceable(*loopVar.output, postSize);
-              }
+              auto postSize = context_->getDerivedDereferenceableSize(*loopVar.post->origin());
+              context_->setDerivedDereferenceableSize(*loopVar.output, postSize);
             }
           },
           [&](rvsdg::DeltaNode &)
@@ -596,9 +644,8 @@ IOBarrierElimination::propagateSize(rvsdg::Graph & graph)
                   if (!is<PointerType>(barredInput.Type()))
                     return;
 
-                  if (const auto size = context_->getDereferenceableSize(*barredInput.origin());
-                      size > 0)
-                    context_->markDereferenceable(*simpleNode.output(0), size);
+                  const auto size = context_->getDerivedDereferenceableSize(*barredInput.origin());
+                  context_->setDerivedDereferenceableSize(*simpleNode.output(0), size);
                 });
           },
           []()
@@ -652,7 +699,7 @@ IOBarrierElimination::encodeSize(rvsdg::Graph & graph)
                       *MemoryHoistBarrierOperation::getAddressInput(simpleNode).origin();
                   const auto mhbSize = memoryHoistBarrier.getDereferenceableSize();
 
-                  if (const auto size = context_->getDereferenceableSize(addressOperand);
+                  if (const auto size = context_->getDerivedDereferenceableSize(addressOperand);
                       size != mhbSize)
                   {
                     auto & ioStateOperand =
@@ -724,7 +771,7 @@ IOBarrierElimination::sweepRegion(rvsdg::Region & region)
             auto & barredAddressInput =
                 MemoryHoistBarrierOperation::getAddressInput(*hoistBarrierNode);
             const auto barredAddressSize =
-                context_->getDereferenceableSize(*barredAddressInput.origin());
+                context_->getDerivedDereferenceableSize(*barredAddressInput.origin());
             if (barredAddressSize == 0)
               return;
 
