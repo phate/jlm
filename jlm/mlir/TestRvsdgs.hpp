@@ -485,7 +485,7 @@ public:
  * jlm::llvm::ConstantDataArrayOperation. The two carry the same operand and result signature, so
  * nothing in the types separates them; each maps to its own MLIR op and coming back as the wrong
  * one is what CompareOperations catches. The sibling \ref jlm::mlir::GlobalArrayTest covers the
- * types, which this fixture deliberately keeps identical so that only the operation can differ.
+ * types.
  *
  * \see jlm::mlir::GlobalArrayTest
  */
