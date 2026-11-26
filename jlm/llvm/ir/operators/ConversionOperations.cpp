@@ -167,6 +167,48 @@ TruncOperation::foldConstant(
   return std::vector<rvsdg::Output *>({ result });
 }
 
+BitToIntegerTypeOperation::~BitToIntegerTypeOperation() noexcept = default;
+
+bool
+BitToIntegerTypeOperation::operator==(const Operation & other) const noexcept
+{
+  const auto op = dynamic_cast<const BitToIntegerTypeOperation *>(&other);
+  return op && op->argument(0) == argument(0) && op->result(0) == result(0);
+}
+
+std::string
+BitToIntegerTypeOperation::debug_string() const
+{
+  return util::strfmt("BitToInt", getBitType()->nbits());
+}
+
+std::unique_ptr<rvsdg::Operation>
+BitToIntegerTypeOperation::copy() const
+{
+  return std::make_unique<BitToIntegerTypeOperation>(*this);
+}
+
+IntegerToBitTypeOperation::~IntegerToBitTypeOperation() noexcept = default;
+
+bool
+IntegerToBitTypeOperation::operator==(const Operation & other) const noexcept
+{
+  const auto op = dynamic_cast<const IntegerToBitTypeOperation *>(&other);
+  return op && op->argument(0) == argument(0) && op->result(0) == result(0);
+}
+
+std::string
+IntegerToBitTypeOperation::debug_string() const
+{
+  return util::strfmt("IntToBit", getIntegerType()->numBits());
+}
+
+std::unique_ptr<rvsdg::Operation>
+IntegerToBitTypeOperation::copy() const
+{
+  return std::make_unique<IntegerToBitTypeOperation>(*this);
+}
+
 PtrToIntOperation::~PtrToIntOperation() noexcept = default;
 
 bool
@@ -216,6 +258,8 @@ mapToLlvmFltSemantics(const fpsize size)
   {
   case fpsize::half:
     return ::llvm::APFloat::IEEEhalf();
+  case fpsize::bfloat:
+    return ::llvm::APFloat::BFloat();
   case fpsize::flt:
     return ::llvm::APFloat::IEEEsingle();
   case fpsize::dbl:

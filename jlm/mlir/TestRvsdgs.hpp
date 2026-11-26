@@ -387,6 +387,31 @@ public:
   jlm::rvsdg::DeltaNode * constantDelta;
 };
 
+/** \brief DeltaAlignmentTest class
+ *
+ * This class sets up an RVSDG representing the following declarations:
+ *
+ * \code{.c}
+ *   __attribute__((aligned(16))) int narrowGlobal = 1;
+ *   __attribute__((aligned(64))) int wideGlobal = 1;
+ * \endcode
+ *
+ * We use alignments other than the default of 4, which is for all other deltas.
+ *
+ * \see ConstantDeltaTest
+ */
+class DeltaAlignmentTest final : public jlm::llvm::RvsdgTest
+{
+private:
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
+  SetupRvsdg() override;
+
+public:
+  jlm::rvsdg::DeltaNode * narrowDelta;
+
+  jlm::rvsdg::DeltaNode * wideDelta;
+};
+
 /** \brief GlobalArrayTest class
  *
  * This class sets up an RVSDG representing the following declarations:
@@ -444,6 +469,40 @@ public:
   jlm::rvsdg::SimpleNode * identifiedStruct;
 
   jlm::rvsdg::SimpleNode * literalStruct;
+};
+
+/** \brief MixedArrayTest class
+ *
+ * This class sets up an RVSDG representing the following declarations:
+ *
+ * \code{.c}
+ *   uint32_t array[2] = { 1, 2 };
+ *   uint32_t dataArray[2] = { 3, 4 };
+ * \endcode
+ *
+ * Both are arrays of two elements held in a delta, but they are built by different operations: the
+ * aggregate \ref jlm::llvm::ConstantArrayOperation and the element-wise \ref
+ * jlm::llvm::ConstantDataArrayOperation. The two carry the same operand and result signature, so
+ * nothing in the types separates them; each maps to its own MLIR op and coming back as the wrong
+ * one is what CompareOperations catches. The sibling \ref jlm::mlir::GlobalArrayTest covers the
+ * types.
+ *
+ * \see jlm::mlir::GlobalArrayTest
+ */
+class MixedArrayTest final : public jlm::llvm::RvsdgTest
+{
+private:
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
+  SetupRvsdg() override;
+
+public:
+  jlm::rvsdg::DeltaNode * arrayDelta;
+
+  jlm::rvsdg::DeltaNode * dataDelta;
+
+  jlm::rvsdg::SimpleNode * constantArray;
+
+  jlm::rvsdg::SimpleNode * constantDataArray;
 };
 
 /** \brief WideMemoryNodesTest class

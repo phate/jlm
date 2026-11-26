@@ -22,6 +22,8 @@ TypeConverter::ExtractFloatingPointSize(const ::llvm::Type & type)
   {
   case ::llvm::Type::HalfTyID:
     return fpsize::half;
+  case ::llvm::Type::BFloatTyID:
+    return fpsize::bfloat;
   case ::llvm::Type::FloatTyID:
     return fpsize::flt;
   case ::llvm::Type::DoubleTyID:
@@ -39,6 +41,12 @@ TypeConverter::ExtractFloatingPointSize(const ::llvm::Type & type)
 TypeConverter::ConvertBitType(const rvsdg::BitType & bitType, ::llvm::LLVMContext & context)
 {
   return ::llvm::Type::getIntNTy(context, bitType.nbits());
+}
+
+::llvm::IntegerType *
+TypeConverter::ConvertIntegerType(const IntegerType & intType, ::llvm::LLVMContext & context)
+{
+  return ::llvm::Type::getIntNTy(context, intType.numBits());
 }
 
 ::llvm::FunctionType *
@@ -124,6 +132,8 @@ TypeConverter::ConvertFloatingPointType(
   {
   case fpsize::half:
     return ::llvm::Type::getHalfTy(context);
+  case fpsize::bfloat:
+    return ::llvm::Type::getBFloatTy(context);
   case fpsize::flt:
     return ::llvm::Type::getFloatTy(context);
   case fpsize::dbl:
@@ -170,6 +180,11 @@ TypeConverter::ConvertJlmType(const rvsdg::Type & type, ::llvm::LLVMContext & co
   if (const auto bitType = dynamic_cast<const rvsdg::BitType *>(&type))
   {
     return ConvertBitType(*bitType, context);
+  }
+
+  if (const auto intType = dynamic_cast<const IntegerType *>(&type))
+  {
+    return ConvertIntegerType(*intType, context);
   }
 
   if (const auto functionType = dynamic_cast<const rvsdg::FunctionType *>(&type))
@@ -238,6 +253,8 @@ TypeConverter::ConvertLlvmType(::llvm::Type & type)
     return ConvertFunctionType(*::llvm::cast<::llvm::FunctionType>(&type));
   case ::llvm::Type::HalfTyID:
     return FloatingPointType::Create(fpsize::half);
+  case ::llvm::Type::BFloatTyID:
+    return FloatingPointType::Create(fpsize::bfloat);
   case ::llvm::Type::FloatTyID:
     return FloatingPointType::Create(fpsize::flt);
   case ::llvm::Type::DoubleTyID:
