@@ -131,6 +131,25 @@ TEST(TraceTests, testGetConstantSignedInteger)
   EXPECT_EQ(tryGetConstantSignedInteger(*lambdaOutput), std::nullopt);
 }
 
+TEST(TraceTests, testGetConstantSignedIntegerThroughBitIntegerTypeConversions)
+{
+  using namespace jlm;
+  using namespace jlm::llvm;
+
+  rvsdg::Graph graph;
+  const auto bitType = rvsdg::BitType::Create(32);
+  const auto integerType = IntegerType::create(32);
+  auto & bitConstant = rvsdg::BitConstantOperation::create(
+      graph.GetRootRegion(), rvsdg::BitValueRepresentation(32, -20));
+
+  auto & integerNode =
+      BitToIntegerTypeOperation::createNode(bitConstant, integerType);
+  auto & bitNode = IntegerToBitTypeOperation::createNode(*integerNode.output(0), bitType);
+
+  EXPECT_EQ(tryGetConstantSignedInteger(*integerNode.output(0)), -20);
+  EXPECT_EQ(tryGetConstantSignedInteger(*bitNode.output(0)), -20);
+}
+
 TEST(TraceTests, testGetConstantSignedIntegerExtAndTrunc)
 {
   using namespace jlm;
