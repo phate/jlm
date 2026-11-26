@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/rvsdg/SimpleNode.hpp"
 #include <gtest/gtest.h>
 
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
