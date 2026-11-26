@@ -1321,6 +1321,10 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_ctl2bits(op, arguments, builder);
   }
+  if (is<BitToIntegerTypeOperation>(op) || is<IntegerToBitTypeOperation>(op))
+  {
+    return Context_->value(arguments[0]);
+  }
   if (is<ConstantVectorOperation>(op))
   {
     return convert_constantvector(op, arguments, builder);
