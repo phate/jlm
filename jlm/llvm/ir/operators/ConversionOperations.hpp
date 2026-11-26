@@ -323,6 +323,139 @@ private:
   }
 };
 
+// FIXME: Remove again once conversion from BitType to IntegerType is completed.
+class BitToIntegerTypeOperation final : public rvsdg::UnaryOperation
+{
+public:
+  ~BitToIntegerTypeOperation() noexcept override;
+
+  explicit BitToIntegerTypeOperation(std::shared_ptr<const rvsdg::BitType> operandType)
+      : UnaryOperation(std::move(operandType), IntegerType::create(operandType->nbits()))
+  {}
+
+  BitToIntegerTypeOperation(
+      const std::shared_ptr<const rvsdg::Type> & operandType,
+      const std::shared_ptr<const rvsdg::Type> & resultType)
+      : UnaryOperation(operandType, resultType)
+  {
+
+    const auto bitType = dynamic_cast<const rvsdg::BitType *>(operandType.get());
+    if (!bitType)
+      throw std::runtime_error("expected bitstring type.");
+
+    const auto integerType = dynamic_cast<const IntegerType *>(resultType.get());
+    if (!integerType)
+      throw std::runtime_error("expected integer type.");
+
+    if (bitType->nbits() != integerType->numBits())
+      throw std::runtime_error("bitstring and integer types must have the same number of bits.");
+  }
+
+  [[nodiscard]] std::shared_ptr<const rvsdg::BitType>
+  getBitType() const
+  {
+    return std::dynamic_pointer_cast<const rvsdg::BitType>(argument(0));
+  }
+
+  [[nodiscard]] std::shared_ptr<const IntegerType>
+  getIntegerType() const
+  {
+    return std::dynamic_pointer_cast<const IntegerType>(result(0));
+  }
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  [[nodiscard]] std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  static std::unique_ptr<ThreeAddressCode>
+  createTac(const Variable * operand, std::shared_ptr<const rvsdg::Type> resultType)
+  {
+    auto operation =
+        std::make_unique<BitToIntegerTypeOperation>(operand->Type(), std::move(resultType));
+    return ThreeAddressCode::create(std::move(operation), { operand });
+  }
+
+  static rvsdg::SimpleNode &
+  createNode(rvsdg::Output & operand, std::shared_ptr<const rvsdg::Type> resultType)
+  {
+    return rvsdg::CreateOpNode<BitToIntegerTypeOperation>(
+        { &operand },
+        operand.Type(),
+        std::move(resultType));
+  }
+};
+
+// FIXME: Remove again once conversion from BitType to IntegerType is completed.
+class IntegerToBitTypeOperation final : public rvsdg::UnaryOperation
+{
+public:
+  ~IntegerToBitTypeOperation() noexcept override;
+
+  explicit IntegerToBitTypeOperation(const std::shared_ptr<const IntegerType> & operandType)
+      : UnaryOperation(operandType, rvsdg::BitType::Create(operandType->numBits()))
+  {}
+
+  IntegerToBitTypeOperation(
+      const std::shared_ptr<const rvsdg::Type> & operandType,
+      const std::shared_ptr<const rvsdg::Type> & resultType)
+      : UnaryOperation(operandType, resultType)
+  {
+    const auto integerType = dynamic_cast<const IntegerType *>(operandType.get());
+    if (!integerType)
+      throw std::runtime_error("expected integer type.");
+
+    const auto bitType = dynamic_cast<const rvsdg::BitType *>(resultType.get());
+    if (!bitType)
+      throw std::runtime_error("expected bitstring type.");
+
+    if (integerType->numBits() != bitType->nbits())
+      throw std::runtime_error("integer and bitstring types must have the same number of bits.");
+  }
+
+  [[nodiscard]] std::shared_ptr<const IntegerType>
+  getIntegerType() const
+  {
+    return std::dynamic_pointer_cast<const IntegerType>(argument(0));
+  }
+
+  [[nodiscard]] std::shared_ptr<const rvsdg::BitType>
+  getBitType() const
+  {
+    return std::dynamic_pointer_cast<const rvsdg::BitType>(result(0));
+  }
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  [[nodiscard]] std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  static std::unique_ptr<ThreeAddressCode>
+  createTac(const Variable * operand, std::shared_ptr<const rvsdg::Type> resultType)
+  {
+    auto operation =
+        std::make_unique<IntegerToBitTypeOperation>(operand->Type(), std::move(resultType));
+    return ThreeAddressCode::create(std::move(operation), { operand });
+  }
+
+  static rvsdg::SimpleNode &
+  createNode(rvsdg::Output & operand, std::shared_ptr<const rvsdg::Type> resultType)
+  {
+    return rvsdg::CreateOpNode<IntegerToBitTypeOperation>(
+        { &operand },
+        operand.Type(),
+        std::move(resultType));
+  }
+};
+
 class PtrToIntOperation final : public rvsdg::UnaryOperation
 {
 public:

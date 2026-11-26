@@ -117,6 +117,20 @@ tryGetConstantSignedInteger(const rvsdg::Output & output)
     return std::nullopt;
   }
 
+  if (const auto [node, conversionOp] =
+          rvsdg::TryGetSimpleNodeAndOptionalOp<BitToIntegerTypeOperation>(normalized);
+      conversionOp)
+  {
+    return tryGetConstantSignedInteger(*node->input(0)->origin());
+  }
+
+  if (const auto [node, conversionOp] =
+          rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerToBitTypeOperation>(normalized);
+      conversionOp)
+  {
+    return tryGetConstantSignedInteger(*node->input(0)->origin());
+  }
+
   if (const auto [sextNode, sextOp] =
           rvsdg::TryGetSimpleNodeAndOptionalOp<SExtOperation>(normalized);
       sextOp)

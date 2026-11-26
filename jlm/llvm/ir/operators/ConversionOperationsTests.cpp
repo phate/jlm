@@ -15,6 +15,29 @@
 
 namespace jlm::llvm
 {
+
+TEST(ConversionOperationsTests, BitIntegerTypeConversions)
+{
+  using namespace jlm::rvsdg;
+
+  Graph graph;
+  const auto bitType = BitType::Create(8);
+  const auto integerType = IntegerType::create(8);
+  auto & constant =
+      IntegerConstantOperation::Create(graph.GetRootRegion(), IntegerValueRepresentation(8, 42));
+
+  auto & integerNode = BitToIntegerTypeOperation::createNode(*constant.output(0), integerType);
+  auto & bitNode = IntegerToBitTypeOperation::createNode(*integerNode.output(0), bitType);
+
+  EXPECT_EQ(*integerNode.output(0)->Type(), *integerType);
+  EXPECT_EQ(*bitNode.output(0)->Type(), *bitType);
+
+  const IntegerToBitTypeOperation inferredBitType(integerType);
+  EXPECT_EQ(*inferredBitType.getIntegerType(), *integerType);
+  EXPECT_EQ(*inferredBitType.getBitType(), *bitType);
+  EXPECT_THROW((IntegerToBitTypeOperation(integerType, BitType::Create(16))), std::runtime_error);
+}
+
 TEST(ConversionOperationsTests, SExtConstantFolding)
 {
   using namespace jlm::rvsdg;
