@@ -43,6 +43,12 @@ TypeConverter::ConvertBitType(const rvsdg::BitType & bitType, ::llvm::LLVMContex
   return ::llvm::Type::getIntNTy(context, bitType.nbits());
 }
 
+::llvm::IntegerType *
+TypeConverter::ConvertIntegerType(const IntegerType & intType, ::llvm::LLVMContext & context)
+{
+  return ::llvm::Type::getIntNTy(context, intType.numBits());
+}
+
 ::llvm::FunctionType *
 TypeConverter::ConvertFunctionType(
     const rvsdg::FunctionType & functionType,
@@ -174,6 +180,11 @@ TypeConverter::ConvertJlmType(const rvsdg::Type & type, ::llvm::LLVMContext & co
   if (const auto bitType = dynamic_cast<const rvsdg::BitType *>(&type))
   {
     return ConvertBitType(*bitType, context);
+  }
+
+  if (const auto intType = dynamic_cast<const IntegerType *>(&type))
+  {
+    return ConvertIntegerType(*intType, context);
   }
 
   if (const auto functionType = dynamic_cast<const rvsdg::FunctionType *>(&type))
