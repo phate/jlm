@@ -106,9 +106,9 @@ class IOBarrierElimination::Context
 {
 public:
   /**
-   * Mark \p output as dereferenceable with size \p sizeInBytes.
-   * Marking is for permanent guarantees, and can never be undone.
-   * For speculative sizes, see \ref setDerviedDereferenceableSize()
+   * Mark \p output as definitively dereferenceable up to at least \p sizeInBytes.
+   * The marked byte size is permanent, and can only ever be increased.
+   * @see setDerivedDereferenceableSize() for derived derferencable sizes, which can be speculative
    */
   void
   markDereferenceable(const rvsdg::Output & output, const size_t sizeInBytes)
@@ -119,7 +119,8 @@ public:
 
   /**
    * Used during the marking phase.
-   * @return the size in bytes the given output has been marked as dereferencable, or 0.
+   * @return the byte size the given output has been marked as dereferencable,
+   * or 0 if it has not been marked.
    */
   size_t
   getMarkedDereferenceableSize(const rvsdg::Output & output)
@@ -134,10 +135,11 @@ public:
    * Used during the propagation phase.
    * Sets a derived estimate for the dereferencable \p sizeInBytes for the given \p output.
    * Subsequent estimates can only make the derived dereferencable size smaller.
-   * If the \p output has been marked as dereferencable up to a certain size,
-   * that gives a lower bound for the estimated derferencable size.
+   * If the \p output has been marked as definitively dereferencable up to a certain size,
+   * the derived size can never become smaller than that.
    *
    * @return true if the derived dereferencable size changed in this operation.
+   * Always returns true the first time a derived size is set, even if it is 0.
    */
   bool
   setDerivedDereferenceableSize(const rvsdg::Output & output, size_t sizeInBytes)
