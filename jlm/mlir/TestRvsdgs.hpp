@@ -471,6 +471,41 @@ public:
   jlm::rvsdg::SimpleNode * literalStruct;
 };
 
+/** \brief MatchAlternativesTest class
+ *
+ * This class sets up an RVSDG representing the dispatch of the following function:
+ *
+ * \code{.c}
+ *   int32_t f(int32_t x)
+ *   {
+ *     switch (x) {
+ *       case 0:
+ *       case 1:
+ *         return 1;
+ *       default:
+ *         return 0;
+ *     }
+ *   }
+ * \endcode
+ *
+ * The lambda returns the switch's control value rather than lowering the arms: cases 0 and 1
+ * select alternative 0, the default alternative 1, as the lowered switch produces. The MLIR match
+ * op carries one rule per matched value plus the default, so the two cases sharing a destination
+ * come back as three rules over two distinct destinations — counting rules instead of destinations
+ * widens the control type from 2 to 3, which is what this graph catches.
+ */
+class MatchAlternativesTest final : public jlm::llvm::RvsdgTest
+{
+private:
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
+  SetupRvsdg() override;
+
+public:
+  jlm::rvsdg::LambdaNode * lambda;
+
+  jlm::rvsdg::Node * match;
+};
+
 /** \brief MixedArrayTest class
  *
  * This class sets up an RVSDG representing the following declarations:

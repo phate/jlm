@@ -716,6 +716,37 @@ ConstantStructTest::SetupRvsdg()
 }
 
 std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
+MatchAlternativesTest::SetupRvsdg()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  auto functionType = FunctionType::Create({ BitType::Create(32) }, { ControlType::Create(2) });
+
+  auto module = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto graph = &module->Rvsdg();
+
+  auto fct = rvsdg::LambdaNode::Create(
+      graph->GetRootRegion(),
+      llvm::LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
+  auto argument = fct->GetFunctionArguments()[0];
+
+  // Cases 0 and 1 share alternative 0, the default is alternative 1: two rules, two distinct
+  // destinations, as the lowered switch produces.
+  std::unordered_map<uint64_t, uint64_t> mapping = { { 0, 0 }, { 1, 0 } };
+  auto & matchNode = MatchOperation::CreateNode(*argument, mapping, 1, 2);
+
+  fct->finalize({ matchNode.output(0) });
+
+  GraphExport::Create(*fct->output(), "f");
+
+  this->lambda = fct;
+  this->match = &matchNode;
+
+  return module;
+}
+
+std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
 MixedArrayTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
