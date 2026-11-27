@@ -21,6 +21,7 @@
 #include <jlm/mlir/MLIRConverterCommon.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/FunctionType.hpp>
+#include <jlm/rvsdg/Phi.hpp>
 #include <jlm/util/common.hpp>
 #include <mlir/Parser/Parser.h>
 #include <mlir/Transforms/TopologicalSortUtils.h>
@@ -1222,6 +1223,36 @@ MlirToJlmConverter::ConvertOperation(
 
     return rvsdg::outputs(rvsdgDeltaNode);
   }
+  else if (auto mlirPhiNode = ::mlir::dyn_cast<::mlir::rvsdg::PhiNode>(&mlirOperation))
+  {
+    ::mlir::Block & phiBlock = mlirPhiNode.getRegion().front();
+    size_t numFixVars = mlirPhiNode.getOutputs().size();
+    JLM_ASSERT(phiBlock.getNumArguments() == numFixVars + inputs.size());
+
+    rvsdg::PhiBuilder phiBuilder;
+    phiBuilder.begin(&rvsdgRegion);
+
+    for (size_t i = 0; i < numFixVars; ++i)
+    {
+      phiBuilder.AddFixVar(ConvertType(mlirPhiNode.getOutputs()[i].getType()));
+    }
+
+    for (rvsdg::Output * input : inputs)
+    {
+      phiBuilder.AddContextVar(*input);
+    }
+
+    auto regionResults = ConvertRegion(mlirPhiNode.getRegion(), *phiBuilder.subregion());
+    JLM_ASSERT(regionResults.size() == numFixVars);
+
+    rvsdg::Region & phiSubregion = *phiBuilder.subregion();
+    for (size_t i = 0; i < regionResults.size(); ++i)
+    {
+      phiSubregion.result(i)->divert_to(regionResults[i]);
+    }
+
+    return rvsdg::outputs(phiBuilder.end());
+  }
   else if (auto mlirMatch = ::mlir::dyn_cast<::mlir::rvsdg::Match>(&mlirOperation))
   {
     std::unordered_map<uint64_t, uint64_t> mapping;
@@ -1275,12 +1306,9 @@ MlirToJlmConverter::ConvertOperation(
   // ** endregion Structural nodes **
 
   else if (
-      ::mlir::isa<::mlir::rvsdg::LambdaResult>(&mlirOperation)
-      || ::mlir::isa<::mlir::rvsdg::GammaResult>(&mlirOperation)
-      || ::mlir::isa<::mlir::rvsdg::ThetaResult>(&mlirOperation)
-      || ::mlir::isa<::mlir::rvsdg::DeltaResult>(&mlirOperation)
-      // This is a terminating operation that doesn't have a corresponding RVSDG node
-      || ::mlir::isa<::mlir::rvsdg::OmegaArgument>(&mlirOperation)) // Handled at the top level
+      // Region terminators have no RVSDG counterpart; OmegaArgument is handled at the top level
+      mlirOperation.hasTrait<::mlir::OpTrait::IsTerminator>()
+      || ::mlir::isa<::mlir::rvsdg::OmegaArgument>(&mlirOperation))
   {
     return {};
   }

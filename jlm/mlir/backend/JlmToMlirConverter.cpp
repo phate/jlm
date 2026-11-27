@@ -21,6 +21,7 @@
 #include <jlm/rvsdg/bitstring/comparison.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/node.hpp>
+#include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/rvsdg/UnitType.hpp>
 
@@ -227,6 +228,10 @@ JlmToMlirConverter::ConvertNode(
   else if (auto delta = dynamic_cast<const rvsdg::DeltaNode *>(&node))
   {
     return ConvertDelta(*delta, block, inputs);
+  }
+  else if (auto phi = dynamic_cast<const rvsdg::PhiNode *>(&node))
+  {
+    return ConvertPhi(*phi, block, inputs);
   }
   else
   {
@@ -1069,6 +1074,17 @@ JlmToMlirConverter::ConvertLambda(
   return lambda;
 }
 
+::llvm::SmallVector<::mlir::Type>
+JlmToMlirConverter::ConvertOutputTypes(const rvsdg::StructuralNode & node)
+{
+  ::llvm::SmallVector<::mlir::Type> outputTypes;
+  for (size_t i = 0; i < node.noutputs(); ++i)
+  {
+    outputTypes.push_back(ConvertType(*node.output(i)->Type()));
+  }
+  return outputTypes;
+}
+
 ::mlir::Operation *
 JlmToMlirConverter::ConvertGamma(
     const rvsdg::GammaNode & gammaNode,
@@ -1077,19 +1093,13 @@ JlmToMlirConverter::ConvertGamma(
 {
   auto & gammaOp = *util::assertedCast<const rvsdg::GammaOperation>(&gammaNode.GetOperation());
 
-  ::llvm::SmallVector<::mlir::Type> typeRangeOuput;
-  for (size_t i = 0; i < gammaNode.noutputs(); ++i)
-  {
-    typeRangeOuput.push_back(ConvertType(*gammaNode.output(i)->Type()));
-  }
-
   // The predicate is always the first input
   // Predicate is used to select the region to execute
   ::mlir::Value predicate = inputs[0];
 
   auto gamma = Builder_->create<::mlir::rvsdg::GammaNode>(
       Builder_->getUnknownLoc(),
-      ::mlir::TypeRange(::llvm::ArrayRef(typeRangeOuput)), // Ouputs types
+      ::mlir::TypeRange(ConvertOutputTypes(gammaNode)), // Ouputs types
       predicate,
       ::mlir::ValueRange({ std::next(inputs.begin()), inputs.end() }), // Inputs
       gammaOp.nalternatives()                                          // regionsCount
@@ -1114,17 +1124,11 @@ JlmToMlirConverter::ConvertTheta(
     ::mlir::Block & block,
     const ::llvm::SmallVector<::mlir::Value> & inputs)
 {
-  ::llvm::SmallVector<::mlir::Type> outputTypeRange;
-  for (size_t i = 0; i < thetaNode.noutputs(); ++i)
-  {
-    outputTypeRange.push_back(ConvertType(*thetaNode.output(i)->Type()));
-  }
-
   ::llvm::SmallVector<::mlir::NamedAttribute> attributes;
 
   auto theta = Builder_->create<::mlir::rvsdg::ThetaNode>(
       Builder_->getUnknownLoc(),
-      ::mlir::TypeRange(::llvm::ArrayRef(outputTypeRange)),
+      ::mlir::TypeRange(ConvertOutputTypes(thetaNode)),
       ::mlir::ValueRange(::llvm::ArrayRef(inputs)),
       attributes);
 
@@ -1164,6 +1168,28 @@ JlmToMlirConverter::ConvertDelta(
       Builder_->create<::mlir::rvsdg::DeltaResult>(Builder_->getUnknownLoc(), regionResults[0]);
   deltaBlock.push_back(deltaResult);
   return delta;
+}
+
+::mlir::Operation *
+JlmToMlirConverter::ConvertPhi(
+    const rvsdg::PhiNode & phiNode,
+    ::mlir::Block & block,
+    const ::llvm::SmallVector<::mlir::Value> & inputs)
+{
+  auto phi = Builder_->create<::mlir::rvsdg::PhiNode>(
+      Builder_->getUnknownLoc(),
+      ::llvm::ArrayRef(ConvertOutputTypes(phiNode)),
+      ::mlir::ValueRange(inputs));
+
+  block.push_back(phi);
+
+  auto & phiBlock = phi.getRegion().emplaceBlock();
+  auto regionResults = ConvertRegion(*phiNode.subregion(), phiBlock);
+  auto phiResult =
+      Builder_->create<::mlir::rvsdg::PhiResult>(Builder_->getUnknownLoc(), regionResults);
+  phiBlock.push_back(phiResult);
+
+  return phi;
 }
 
 ::mlir::FloatType
