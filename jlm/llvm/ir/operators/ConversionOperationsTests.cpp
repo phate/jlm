@@ -8,10 +8,15 @@
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/opt/NodeReduction.hpp>
+#include <jlm/rvsdg/bitstring/type.hpp>
+#include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/NodeNormalization.hpp>
 #include <jlm/rvsdg/SimpleNode.hpp>
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/view.hpp>
+#include <jlm/util/Statistics.hpp>
 
 namespace jlm::llvm
 {
@@ -36,6 +41,35 @@ TEST(ConversionOperationsTests, BitIntegerTypeConversions)
   EXPECT_EQ(*inferredBitType.getIntegerType(), *integerType);
   EXPECT_EQ(*inferredBitType.getBitType(), *bitType);
   EXPECT_THROW((IntegerToBitTypeOperation(integerType, BitType::Create(16))), std::runtime_error);
+}
+
+TEST(ConversionOperationsTests, NormalizeInverseBitIntegerConversions)
+{
+  using namespace jlm::rvsdg;
+
+  const auto bitType = BitType::Create(8);
+  const auto integerType = IntegerType::create(8);
+
+  LlvmRvsdgModule rvsdgModule(util::FilePath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+  auto & bitArgument = GraphImport::Create(graph, bitType, "bits");
+  auto & integerArgument = GraphImport::Create(graph, integerType, "integer");
+
+  auto & integerNode = BitToIntegerTypeOperation::createNode(bitArgument, integerType);
+  auto & bitResultNode = IntegerToBitTypeOperation::createNode(*integerNode.output(0), bitType);
+  auto & bitNode = IntegerToBitTypeOperation::createNode(integerArgument, bitType);
+  auto & integerResultNode = BitToIntegerTypeOperation::createNode(*bitNode.output(0), integerType);
+
+  GraphExport::Create(*bitResultNode.output(0), "bitsResult");
+  GraphExport::Create(*integerResultNode.output(0), "integerResult");
+
+  NodeReduction nodeReduction;
+  util::StatisticsCollector statisticsCollector(
+      util::StatisticsCollectorSettings({ util::Statistics::Id::ReduceNodes }));
+  nodeReduction.Run(rvsdgModule, statisticsCollector);
+
+  EXPECT_EQ(graph.GetRootRegion().result(0)->origin(), &bitArgument);
+  EXPECT_EQ(graph.GetRootRegion().result(1)->origin(), &integerArgument);
 }
 
 TEST(ConversionOperationsTests, SExtConstantFolding)
