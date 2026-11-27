@@ -389,6 +389,20 @@ public:
         std::move(resultType));
   }
 
+  /**
+   * Removes a \ref BitToIntegerTypeOperation node whose operand is produced by an
+   * \ref IntegerToBitTypeOperation node:
+   *
+   * integer = BitToIntegerTypeOperation(IntegerToBitTypeOperation(bit))
+   * =>
+   * integer = bit
+   *
+   * @param operation The \ref BitToIntegerTypeOperation on which the transformation is performed.
+   * @param operands The operands of the \ref BitToIntegerTypeOperation node.
+   *
+   * @return If the normalization could be applied, then the results of the
+   * \ref BitToIntegerTypeOperation after the transformation. Otherwise, std::nullopt.
+   */
   static std::optional<std::vector<rvsdg::Output *>>
   normalizeInverse(
       const BitToIntegerTypeOperation & operation,
@@ -460,6 +474,20 @@ public:
         std::move(resultType));
   }
 
+  /**
+   * Removes an \ref IntegerToBitTypeOperation node whose operand is produced by a
+   * \ref BitToIntegerTypeOperation node:
+   *
+   * bit = IntegerToBitTypeOperation(BitToIntegerTypeOperation(integer))
+   * =>
+   * bit = integer
+   *
+   * @param operation The \ref IntegerToBitTypeOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerToBitTypeOperation node.
+   *
+   * @return If the normalization could be applied, then the results of the
+   * \ref IntegerToBitTypeOperation after the transformation. Otherwise, std::nullopt.
+   */
   static std::optional<std::vector<rvsdg::Output *>>
   normalizeInverse(
       const IntegerToBitTypeOperation & operation,
