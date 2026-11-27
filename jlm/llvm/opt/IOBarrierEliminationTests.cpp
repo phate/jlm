@@ -5,9 +5,11 @@
 
 #include <gtest/gtest.h>
 
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/IOBarrierElimination.hpp>
@@ -17,6 +19,7 @@
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/TestNodes.hpp>
 #include <jlm/rvsdg/TestOperations.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/util/Statistics.hpp>
 
 namespace jlm::llvm
@@ -749,6 +752,126 @@ TEST(IOBarrierEliminationTests, testNormalizationFromLoadedAddress)
   // Assert
   // We expect the origin of the ptrEntryVar to be the outermost MemoryHoistBarrierOperation node
   EXPECT_EQ(ptrEntryVar.input->origin(), hoistBarrierNode1.output(0));
+}
+
+TEST(IOBarrierEliminationTests, testBarrierInsideThetaFixedPoint)
+{
+  using namespace jlm::rvsdg;
+
+  /**
+   * Creates an RVSDG that looks like
+   * f = lambda "test"
+   *   [ptr, io0, mem0]{
+   *     l, mem1 = load[bit32] ptr, mem0
+   *     _, io5, mem7, value2 = theta ptr, io0, mem1, l
+   *       [ptr1, io1, mem2, _]{
+   *         nullPtr1 = ConstantPointerNullOperation
+   *         isNull = PtrCmp[eq] ptr1, nullPtr1
+   *         gammaControl = Match[1->1, 0] isNull
+   *         value, io4, mem6, c2 = gamma gammaControl, ptr1, io1, mem2
+   *           [ptr2, io2, mem3] {
+   *             barred = MemoryHoistBarrier ptr2, io2
+   *             l2, mem4 = load[bit32] barred, mem3
+   *             c1 = Control(1)
+   *           }[l2, io2, mem4, c1]
+   *           [ptr3, io3, mem5] {
+   *             imm = IntegerValue(5)
+   *             c0 = Control(0)
+   *           }[imm, io3, mem5, c0]
+   *         nullPtr2 = ConstantPointerNullOperation
+   *       }[c2, nullPtr2, io4, mem6, value]
+   *   }[value2, io5, mem7]
+   *
+   * After running IOBarrierElimination, the inner MemoryHoistBarrier should still be present.
+   */
+
+  // Arrange
+  auto i32Type = BitType::Create(32);
+  auto pointerType = PointerType::Create();
+  auto ioStateType = IOStateType::Create();
+  auto memStateType = MemoryStateType::Create();
+  auto controlType = ControlType::Create(2);
+  auto functionType = FunctionType::Create(
+      { pointerType, ioStateType, memStateType },
+      { i32Type, ioStateType, memStateType });
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+  auto ptrArgument = lambdaNode->GetFunctionArguments()[0];
+  auto ioStateArgument = lambdaNode->GetFunctionArguments()[1];
+  auto memStateArgument = lambdaNode->GetFunctionArguments()[2];
+
+  // l, mem1 = load[bit32] ptr, mem0
+  auto & outerLoadNode =
+      LoadNonVolatileOperation::CreateNode(*ptrArgument, { memStateArgument }, i32Type, 4);
+
+  auto thetaNode = ThetaNode::create(lambdaNode->subregion());
+  auto ptrLoopVar = thetaNode->AddLoopVar(ptrArgument);
+  auto ioStateLoopVar = thetaNode->AddLoopVar(ioStateArgument);
+  auto memStateLoopVar = thetaNode->AddLoopVar(outerLoadNode.output(1));
+  auto valueLoopVar = thetaNode->AddLoopVar(&LoadOperation::LoadedValueOutput(outerLoadNode));
+
+  auto & nullPtrNode1 = ConstantPointerNullOperation::createNode(*thetaNode->subregion());
+  auto & ptrCmpNode =
+      PtrCmpOperation::createNode(ICmpPredicate::Eq, *ptrLoopVar.pre, *nullPtrNode1.output(0));
+  auto & matchNode = MatchOperation::CreateNode(*ptrCmpNode.output(0), { { 1, 1 } }, 0, 2);
+
+  auto gammaNode = GammaNode::create(matchNode.output(0), 2);
+  auto ptrEntryVar = gammaNode->AddEntryVar(ptrLoopVar.pre);
+  auto ioStateEntryVar = gammaNode->AddEntryVar(ioStateLoopVar.pre);
+  auto memStateEntryVar = gammaNode->AddEntryVar(memStateLoopVar.pre);
+
+  // gamma subregion 0
+  auto & hoistBarrierNode = MemoryHoistBarrierOperation::createNode(
+      *ptrEntryVar.branchArgument[0],
+      *ioStateEntryVar.branchArgument[0],
+      0);
+  auto & loadNode = LoadNonVolatileOperation::CreateNode(
+      *hoistBarrierNode.output(0),
+      { memStateEntryVar.branchArgument[0] },
+      i32Type,
+      4);
+  auto & trueConstant = ControlConstantOperation::create(*gammaNode->subregion(0), 2, 1);
+
+  // gamma subregion 1
+  auto & integerNode = IntegerConstantOperation::Create(*gammaNode->subregion(1), 32, 5);
+  auto & falseConstant = ControlConstantOperation::create(*gammaNode->subregion(1), 2, 0);
+
+  auto valueExitVar = gammaNode->AddExitVar({ loadNode.output(0), integerNode.output(0) });
+  auto ioStateExitVar = gammaNode->AddExitVar(
+      { ioStateEntryVar.branchArgument[0], ioStateEntryVar.branchArgument[1] });
+  auto memStateExitVar =
+      gammaNode->AddExitVar({ loadNode.output(1), memStateEntryVar.branchArgument[1] });
+  auto controlExitVar = gammaNode->AddExitVar({ &trueConstant, &falseConstant });
+
+  // The gamma node's control value decides whether the loop continues or is exited.
+  thetaNode->set_predicate(controlExitVar.output);
+
+  // The pointer loop variable is reset to null in every iteration, which means that it is not
+  // dereferenceable anymore after the first iteration.
+  auto nullPtrNode2 = ConstantPointerNullOperation::createNode(*thetaNode->subregion()).output(0);
+  ptrLoopVar.post->divert_to(nullPtrNode2);
+  ioStateLoopVar.post->divert_to(ioStateExitVar.output);
+  memStateLoopVar.post->divert_to(memStateExitVar.output);
+  valueLoopVar.post->divert_to(valueExitVar.output);
+
+  auto lambdaOutput =
+      lambdaNode->finalize({ valueLoopVar.output, ioStateLoopVar.output, memStateLoopVar.output });
+  GraphExport::Create(*lambdaOutput, "test");
+
+  // Act
+  runIOBarrierElimination(*rvsdgModule);
+
+  // Assert
+  // We expect the MemoryHoistBarrierOperation node inside the gamma node to NOT be eliminated.
+  // The inner load node should still get its address from a barrier
+  auto & loadAddress = *LoadNonVolatileOperation::AddressInput(loadNode).origin();
+  auto [_, mhbOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryHoistBarrierOperation>(loadAddress);
+  EXPECT_TRUE(mhbOp);
 }
 
 }

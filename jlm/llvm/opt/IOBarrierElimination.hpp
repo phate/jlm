@@ -42,6 +42,14 @@ private:
   void
   markOutputs(rvsdg::Region & region);
 
+  /**
+   * Used during the marking phase.
+   * When all subregions of a gamma have marked an entry variable as dereferencable,
+   * the corresponding gamma input must also be dereferencable.
+   */
+  size_t
+  getMarkedDereferenceableSize(const rvsdg::GammaNode::EntryVar & entryVar) const;
+
   void
   propagateSize(rvsdg::Graph & graph);
 
@@ -50,9 +58,6 @@ private:
 
   void
   sweepRegion(rvsdg::Region & region);
-
-  size_t
-  getDereferenceableSize(const rvsdg::GammaNode::EntryVar & entryVar) const;
 
   std::unique_ptr<Context> context_{};
 };
