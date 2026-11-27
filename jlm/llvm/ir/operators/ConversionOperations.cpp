@@ -188,6 +188,21 @@ BitToIntegerTypeOperation::copy() const
   return std::make_unique<BitToIntegerTypeOperation>(*this);
 }
 
+std::optional<std::vector<rvsdg::Output *>>
+BitToIntegerTypeOperation::normalizeInverse(
+    const BitToIntegerTypeOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 1);
+
+  auto [node, operation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerToBitTypeOperation>(*operands[0]);
+  if (!operation)
+    return std::nullopt;
+
+  return std::vector({ node->input(0)->origin() });
+}
+
 IntegerToBitTypeOperation::~IntegerToBitTypeOperation() noexcept = default;
 
 bool
@@ -207,6 +222,21 @@ std::unique_ptr<rvsdg::Operation>
 IntegerToBitTypeOperation::copy() const
 {
   return std::make_unique<IntegerToBitTypeOperation>(*this);
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+IntegerToBitTypeOperation::normalizeInverse(
+    const IntegerToBitTypeOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 1);
+
+  auto [node, operation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<BitToIntegerTypeOperation>(*operands[0]);
+  if (!operation)
+    return std::nullopt;
+
+  return std::vector({ node->input(0)->origin() });
 }
 
 PtrToIntOperation::~PtrToIntOperation() noexcept = default;
