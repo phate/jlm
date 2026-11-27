@@ -251,6 +251,86 @@ MlirToJlmConverter::ConvertICmpOp(
     rvsdg::Region & rvsdgRegion,
     const ::llvm::SmallVector<rvsdg::Output *> & inputs)
 {
+  /*
+   * LLVM IR compares integers and pointers with the same icmp instruction, and the LLVM dialect
+   * mirrors that, so the operand type alone says which comparison an icmp encodes. Route on it
+   * rather than assume: integer operands convert to the integer comparison operations, pointer
+   * operands to a PtrCmpOperation. The backend pairs with this by emitting an icmp only for
+   * pointer comparisons, but the instruction is the dialect's canonical integer comparison too,
+   * so input this converter did not produce may use it either way.
+   */
+  if (inputs.size() != 2)
+  {
+    throw util::Error(util::strfmt(
+        "frontend : llvm.icmp expects 2 operands, but ",
+        inputs.size(),
+        " were provided."));
+  }
+
+  if (rvsdg::is<llvm::PointerType>(inputs[0]->Type())
+      != rvsdg::is<llvm::PointerType>(inputs[1]->Type()))
+  {
+    throw util::Error("frontend : llvm.icmp operands have different types.");
+  }
+
+  if (!rvsdg::is<llvm::PointerType>(inputs[0]->Type()))
+  {
+    auto bitType = std::dynamic_pointer_cast<const rvsdg::BitType>(inputs[0]->Type());
+    if (!bitType)
+    {
+      throw util::Error(util::strfmt(
+          "frontend : llvm.icmp operand type '",
+          inputs[0]->Type()->debug_string(),
+          "' is neither a pointer nor an integer."));
+    }
+
+    const auto nbits = bitType->nbits();
+    if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::eq)
+    {
+      return &rvsdg::CreateOpNode<jlm::llvm::IntegerEqOperation>({ inputs[0], inputs[1] }, nbits);
+    }
+    else if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::ne)
+    {
+      return &rvsdg::CreateOpNode<jlm::llvm::IntegerNeOperation>({ inputs[0], inputs[1] }, nbits);
+    }
+    else if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::sge)
+    {
+      return &rvsdg::CreateOpNode<jlm::llvm::IntegerSgeOperation>({ inputs[0], inputs[1] }, nbits);
+    }
+    else if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::sgt)
+    {
+      return &rvsdg::CreateOpNode<jlm::llvm::IntegerSgtOperation>({ inputs[0], inputs[1] }, nbits);
+    }
+    else if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::sle)
+    {
+      return &rvsdg::CreateOpNode<jlm::llvm::IntegerSleOperation>({ inputs[0], inputs[1] }, nbits);
+    }
+    else if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::slt)
+    {
+      return &rvsdg::CreateOpNode<jlm::llvm::IntegerSltOperation>({ inputs[0], inputs[1] }, nbits);
+    }
+    else if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::uge)
+    {
+      return &rvsdg::CreateOpNode<jlm::llvm::IntegerUgeOperation>({ inputs[0], inputs[1] }, nbits);
+    }
+    else if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::ugt)
+    {
+      return &rvsdg::CreateOpNode<jlm::llvm::IntegerUgtOperation>({ inputs[0], inputs[1] }, nbits);
+    }
+    else if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::ule)
+    {
+      return &rvsdg::CreateOpNode<jlm::llvm::IntegerUleOperation>({ inputs[0], inputs[1] }, nbits);
+    }
+    else if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::ult)
+    {
+      return &rvsdg::CreateOpNode<jlm::llvm::IntegerUltOperation>({ inputs[0], inputs[1] }, nbits);
+    }
+    else
+    {
+      JLM_UNREACHABLE("frontend : Unknown comparison predicate.");
+    }
+  }
+
   if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::eq)
   {
     auto newOp = std::make_unique<llvm::PtrCmpOperation>(
@@ -306,6 +386,46 @@ MlirToJlmConverter::ConvertICmpOp(
     auto newOp = std::make_unique<llvm::PtrCmpOperation>(
         llvm::PointerType::Create(),
         llvm::ICmpPredicate::Slt);
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        std::move(newOp),
+        std::vector<jlm::rvsdg::Output *>(inputs.begin(), inputs.end()));
+  }
+  else if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::ult)
+  {
+    auto newOp = std::make_unique<llvm::PtrCmpOperation>(
+        llvm::PointerType::Create(),
+        llvm::ICmpPredicate::Ult);
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        std::move(newOp),
+        std::vector<jlm::rvsdg::Output *>(inputs.begin(), inputs.end()));
+  }
+  else if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::ule)
+  {
+    auto newOp = std::make_unique<llvm::PtrCmpOperation>(
+        llvm::PointerType::Create(),
+        llvm::ICmpPredicate::Ule);
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        std::move(newOp),
+        std::vector<jlm::rvsdg::Output *>(inputs.begin(), inputs.end()));
+  }
+  else if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::ugt)
+  {
+    auto newOp = std::make_unique<llvm::PtrCmpOperation>(
+        llvm::PointerType::Create(),
+        llvm::ICmpPredicate::Ugt);
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        std::move(newOp),
+        std::vector<jlm::rvsdg::Output *>(inputs.begin(), inputs.end()));
+  }
+  else if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::uge)
+  {
+    auto newOp = std::make_unique<llvm::PtrCmpOperation>(
+        llvm::PointerType::Create(),
+        llvm::ICmpPredicate::Uge);
     return &rvsdg::SimpleNode::Create(
         rvsdgRegion,
         std::move(newOp),
