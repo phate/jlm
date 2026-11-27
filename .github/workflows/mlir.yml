@@ -9,6 +9,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  c-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Build jlm"
+        uses: ./.github/actions/BuildJlm
+        with:
+          make-target: 'all-without-tests'
+          enable-mlir: true
+      - name: "Run c-tests through the MLIR roundtrip"
+        run: make JLC=./scripts/jlc-mlir-roundtrip.py check
   polybench:
     runs-on: ubuntu-24.04
     steps:

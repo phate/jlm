@@ -52,5 +52,10 @@ if 'LD_LIBRARY_PATH' in makefile_vars and makefile_vars['LD_LIBRARY_PATH']:
 jlc_path = os.path.join(project_root, 'build', 'jlc')
 jlm_opt_path = os.path.join(project_root, 'build', 'jlm-opt')
 
+# Allow overriding the jlc binary, e.g. for the MLIR roundtrip sweep:
+#   lit -Djlc=<repo>/scripts/jlc-mlir-roundtrip.py tests/c-tests
+if 'jlc' in lit_config.params:
+    jlc_path = lit_config.params['jlc']
+
 config.substitutions.append(('%jlc', jlc_path))
 config.substitutions.append(('%jlm-opt', jlm_opt_path))
