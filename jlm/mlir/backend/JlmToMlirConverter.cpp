@@ -15,6 +15,7 @@
 #include <jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/StdLibIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
+#include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
 #include <jlm/mlir/MLIRConverterCommon.hpp>
 #include <jlm/rvsdg/bitstring/arithmetic.hpp>
@@ -838,12 +839,7 @@ JlmToMlirConverter::ConvertSimpleNode(
   }
   else if (auto op = dynamic_cast<const llvm::GetElementPtrOperation *>(&operation))
   {
-    MlirOp = Builder_->create<::mlir::LLVM::GEPOp>(
-        Builder_->getUnknownLoc(),
-        ConvertType(*op->result(0)),                                      // resultType
-        ConvertType(*op->getPointeeType()),                               // elementType
-        inputs[0],                                                        // basePtr
-        ::mlir::ValueRange({ std::next(inputs.begin()), inputs.end() })); // indices
+    MlirOp = ConvertGetElementPtr(*op, node, inputs);
   }
   else if (auto selectOp = dynamic_cast<const llvm::SelectOperation *>(&operation))
   {
@@ -1190,6 +1186,71 @@ JlmToMlirConverter::ConvertPhi(
   phiBlock.push_back(phiResult);
 
   return phi;
+}
+
+::mlir::Operation *
+JlmToMlirConverter::ConvertGetElementPtr(
+    const llvm::GetElementPtrOperation & operation,
+    const rvsdg::SimpleNode & node,
+    const ::llvm::SmallVector<::mlir::Value> & inputs)
+{
+  // The dialect's verifier requires an index selecting a struct member to be folded into
+  // rawConstantIndices, while an index stepping through an array may stay an operand. The type
+  // walk below tracks which index positions descend into a struct.
+  ::llvm::SmallVector<::mlir::LLVM::GEPArg> indices;
+
+  // The first index steps the pointee type itself, so it can never select a struct member; from
+  // the second index on, the type being stepped decides.
+  auto indexedType = operation.getPointeeType();
+  for (size_t n = 1; n < inputs.size(); n++)
+  {
+    if (n == 1)
+    {
+      indices.push_back(inputs[n]);
+      continue;
+    }
+
+    if (const auto structType = dynamic_cast<const llvm::StructType *>(indexedType.get()))
+    {
+      // Trace the value out: the dialect cannot fold it from an operand, even when the constant
+      // sits behind a loop-invariant value or an extension.
+      const auto constant = llvm::tryGetConstantSignedInteger(*node.input(n)->origin());
+      if (!constant.has_value() || constant.value() < 0
+          || static_cast<size_t>(constant.value()) >= structType->numElements())
+      {
+        throw util::Error(
+            "backend : Index into a struct type of getelementptr is not a constant within the "
+            "bounds of the struct. MLIR's LLVM dialect needs a literal index for a struct "
+            "element.");
+      }
+
+      indices.push_back(static_cast<int32_t>(constant.value()));
+      indexedType = structType->getElementType(constant.value());
+      continue;
+    }
+
+    indices.push_back(inputs[n]);
+
+    if (const auto arrayType = dynamic_cast<const llvm::ArrayType *>(indexedType.get()))
+    {
+      indexedType = arrayType->GetElementType();
+    }
+    else if (const auto vectorType = dynamic_cast<const llvm::VectorType *>(indexedType.get()))
+    {
+      indexedType = vectorType->Type();
+    }
+    else
+    {
+      indexedType.reset();
+    }
+  }
+
+  return Builder_->create<::mlir::LLVM::GEPOp>(
+      Builder_->getUnknownLoc(),
+      ConvertType(*operation.result(0)),        // resultType
+      ConvertType(*operation.getPointeeType()), // elementType
+      inputs[0],                                // basePtr
+      ::llvm::ArrayRef<::mlir::LLVM::GEPArg>(indices));
 }
 
 ::mlir::FloatType

@@ -8,6 +8,7 @@
 
 // JLM
 #include <jlm/llvm/ir/operators/delta.hpp>
+#include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
@@ -251,6 +252,20 @@ public:
   ConvertPhi(
       const rvsdg::PhiNode & phiNode,
       ::mlir::Block & block,
+      const ::llvm::SmallVector<::mlir::Value> & inputs);
+
+  /**
+   * Converts an RVSDG GetElementPtrOperation to an MLIR LLVM::GEPOp, folding struct indices into
+   * the rawConstantIndices attribute.
+   * \param operation The RVSDG GetElementPtrOperation to be converted.
+   * \param node The simple node holding the operation, used to trace constant struct indices.
+   * \param inputs The converted operands: the base pointer followed by the index values.
+   * \result The converted MLIR LLVM::GEPOp.
+   */
+  ::mlir::Operation *
+  ConvertGetElementPtr(
+      const llvm::GetElementPtrOperation & operation,
+      const rvsdg::SimpleNode & node,
       const ::llvm::SmallVector<::mlir::Value> & inputs);
 
   /**

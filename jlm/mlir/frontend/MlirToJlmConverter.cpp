@@ -459,6 +459,42 @@ arrayAttrToMemoryNodeIds(::mlir::ArrayAttr arrayAttr)
   return memoryNodeIds;
 }
 
+/**
+ * Looks for a node in \p rvsdgRegion producing the integer constant \p value with \p numBits, and
+ * returns its output, or nullptr if there is none.
+ *
+ * A struct index is carried in the rawConstantIndices attribute of \c LLVM::GEPOp rather than as
+ * an operand, so no \c arith.constant conversion covers it; materializing it blindly creates a
+ * second node for the same value.
+ */
+static rvsdg::Output *
+tryFindConstantNode(rvsdg::Region & rvsdgRegion, size_t numBits, int32_t value)
+{
+  const llvm::IntegerValueRepresentation representation(numBits, value);
+  for (const auto & node : rvsdgRegion.Nodes())
+  {
+    auto * simpleNode = dynamic_cast<const rvsdg::SimpleNode *>(&node);
+    if (!simpleNode)
+    {
+      continue;
+    }
+
+    auto * constantOperation =
+        dynamic_cast<const llvm::IntegerConstantOperation *>(&simpleNode->GetOperation());
+    if (!constantOperation)
+    {
+      continue;
+    }
+
+    if (constantOperation->Representation() == representation)
+    {
+      return simpleNode->output(0);
+    }
+  }
+
+  return nullptr;
+}
+
 std::vector<jlm::rvsdg::Output *>
 MlirToJlmConverter::ConvertOperation(
     ::mlir::Operation & mlirOperation,
@@ -1065,10 +1101,17 @@ MlirToJlmConverter::ConvertOperation(
       }
       else
       {
-        // Constant indices are not part of the inputs to a GEPOp,
-        // but they are required as explicit nodes in RVSDG.
-        indices.push_back(
-            jlm::llvm::IntegerConstantOperation::Create(rvsdgRegion, 32, constant).output(0));
+        // Constant indices are not GEPOp operands but must be explicit nodes in RVSDG. The
+        // backend folds them as 32-bit values, so materialize them at that width. Reuse an
+        // existing node for the same value instead of creating a duplicate — the same constant
+        // may also be in use outside this GEP, e.g. converted from an arith.constant.
+        auto constantNode = tryFindConstantNode(rvsdgRegion, 32, constant);
+        if (!constantNode)
+        {
+          constantNode =
+              jlm::llvm::IntegerConstantOperation::Create(rvsdgRegion, 32, constant).output(0);
+        }
+        indices.push_back(constantNode);
       }
     }
 
