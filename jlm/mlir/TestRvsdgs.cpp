@@ -456,7 +456,7 @@ ComparisonTest::SetupRvsdg()
   auto bitType32 = BitType::Create(32);
   auto functionType = FunctionType::Create(
       { doubleType, doubleType, pointerType, pointerType },
-      { bitType32, bitType32 });
+      { bitType32, bitType32, bitType32 });
 
   auto module = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
@@ -488,7 +488,16 @@ ComparisonTest::SetupRvsdg()
       { pointerCompareNode.output(0), one->output(0), zero->output(0) },
       bitType32);
 
-  fct->finalize({ firstSelect.output(0), secondSelect.output(0) });
+  auto & unsignedPointerCompareNode = CreateOpNode<PtrCmpOperation>(
+      { lhsPointerArgument, rhsPointerArgument },
+      pointerType,
+      ICmpPredicate::Uge);
+
+  auto & thirdSelect = CreateOpNode<SelectOperation>(
+      { unsignedPointerCompareNode.output(0), one->output(0), zero->output(0) },
+      bitType32);
+
+  fct->finalize({ firstSelect.output(0), secondSelect.output(0), thirdSelect.output(0) });
 
   GraphExport::Create(*fct->output(), "f");
 

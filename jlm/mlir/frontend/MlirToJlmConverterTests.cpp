@@ -140,6 +140,116 @@ TEST(MlirToJlmConverterTests, TestLambda)
   }
 }
 
+/** \brief TestICmpIntegerOperands
+ *
+ * LLVM IR compares integers and pointers with the same icmp instruction, so an llvm.icmp with
+ * integer operands is the dialect's canonical integer comparison. The frontend must route on the
+ * operand type and convert it to the integer comparison operation rather than assume it compares
+ * pointers.
+ */
+TEST(MlirToJlmConverterTests, TestICmpIntegerOperands)
+{
+  using namespace mlir::rvsdg;
+  using namespace mlir::jlm;
+
+  auto context = std::make_unique<mlir::MLIRContext>();
+  context->getOrLoadDialect<RVSDGDialect>();
+  context->getOrLoadDialect<JLMDialect>();
+  context->getOrLoadDialect<mlir::arith::ArithDialect>();
+  context->getOrLoadDialect<mlir::LLVM::LLVMDialect>();
+  auto Builder_ = std::make_unique<mlir::OpBuilder>(context.get());
+
+  auto omega = Builder_->create<OmegaNode>(Builder_->getUnknownLoc());
+  auto & omegaRegion = omega.getRegion();
+  auto * omegaBlock = new mlir::Block;
+  omegaRegion.push_back(omegaBlock);
+
+  ::llvm::SmallVector<mlir::Type> arguments;
+  arguments.push_back(Builder_->getIntegerType(32));
+  arguments.push_back(Builder_->getIntegerType(32));
+  arguments.push_back(Builder_->getType<IOStateEdgeType>());
+  arguments.push_back(Builder_->getType<MemStateEdgeType>());
+
+  ::llvm::SmallVector<mlir::Type> results;
+  results.push_back(Builder_->getI1Type());
+  results.push_back(Builder_->getType<IOStateEdgeType>());
+  results.push_back(Builder_->getType<MemStateEdgeType>());
+
+  ::llvm::SmallVector<mlir::NamedAttribute> attributes;
+  attributes.push_back(
+      Builder_->getNamedAttr(Builder_->getStringAttr("sym_name"), Builder_->getStringAttr("test")));
+  attributes.push_back(Builder_->getNamedAttr(
+      Builder_->getStringAttr("linkage"),
+      Builder_->getStringAttr("external_linkage")));
+  ::llvm::ArrayRef attributesRef(attributes);
+
+  ::llvm::SmallVector<mlir::Value> inputs;
+  auto lambda = Builder_->create<LambdaNode>(
+      Builder_->getUnknownLoc(),
+      Builder_->getType<mlir::FunctionType>(arguments, results),
+      inputs,
+      attributesRef);
+  omegaBlock->push_back(lambda);
+  auto & lambdaRegion = lambda.getRegion();
+  auto * lambdaBlock = new mlir::Block;
+  lambdaRegion.push_back(lambdaBlock);
+
+  auto lhs = lambdaBlock->addArgument(Builder_->getIntegerType(32), Builder_->getUnknownLoc());
+  auto rhs = lambdaBlock->addArgument(Builder_->getIntegerType(32), Builder_->getUnknownLoc());
+  lambdaBlock->addArgument(Builder_->getType<IOStateEdgeType>(), Builder_->getUnknownLoc());
+  lambdaBlock->addArgument(Builder_->getType<MemStateEdgeType>(), Builder_->getUnknownLoc());
+
+  auto icmpOp = Builder_->create<mlir::LLVM::ICmpOp>(
+      Builder_->getUnknownLoc(),
+      mlir::LLVM::ICmpPredicate::slt,
+      lhs,
+      rhs);
+  lambdaBlock->push_back(icmpOp);
+
+  ::llvm::SmallVector<mlir::Value> regionResults;
+  regionResults.push_back(icmpOp.getResult());
+  regionResults.push_back(lambdaBlock->getArgument(2));
+  regionResults.push_back(lambdaBlock->getArgument(3));
+  auto lambdaResult = Builder_->create<LambdaResult>(Builder_->getUnknownLoc(), regionResults);
+  lambdaBlock->push_back(lambdaResult);
+
+  ::llvm::SmallVector<mlir::Value> omegaRegionResults;
+  omegaRegionResults.push_back(lambda.getResult());
+  ::llvm::SmallVector<mlir::Type> omegaResultTypes;
+  omegaResultTypes.push_back(lambda.getResult().getType());
+  ::llvm::SmallVector<::mlir::Attribute> exportNamesList;
+  exportNamesList.push_back(Builder_->getStringAttr("test"));
+  auto exportNamesAttr = ::mlir::ArrayAttr::get(Builder_->getContext(), exportNamesList);
+  ::llvm::SmallVector<::mlir::NamedAttribute> namedAttrs;
+  namedAttrs.push_back({ Builder_->getStringAttr("exportNames"), exportNamesAttr });
+  auto omegaResult = Builder_->create<OmegaResult>(
+      Builder_->getUnknownLoc(),
+      omegaResultTypes,
+      omegaRegionResults,
+      namedAttrs);
+  omegaBlock->push_back(omegaResult);
+
+  std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
+  rootBlock->push_back(omega);
+
+  auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
+  auto region = &rvsdgModule->Rvsdg().GetRootRegion();
+  {
+    using namespace jlm::rvsdg;
+
+    EXPECT_EQ(region->numNodes(), 1u);
+    auto convertedLambda =
+        jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+    EXPECT_TRUE(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda->GetOperation()));
+
+    // The icmp must convert to the integer comparison operation, not a pointer comparison.
+    EXPECT_EQ(convertedLambda->subregion()->numNodes(), 1u);
+    auto * compareNode = jlm::util::assertedCast<jlm::rvsdg::SimpleNode>(
+        convertedLambda->subregion()->Nodes().begin().ptr());
+    EXPECT_TRUE(is<jlm::llvm::IntegerSltOperation>(compareNode->GetOperation()));
+  }
+}
+
 /** \brief TestDivOperation
  *
  * This test is similar to TestLambda, but it adds a division operation to the

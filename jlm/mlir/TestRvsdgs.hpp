@@ -307,13 +307,14 @@ public:
  *   int32_t f(double a, double b, int32_t * x, int32_t * y)
  *   {
  *     int32_t p = (a < b) ? 1 : 0;
- *     int32_t q = (x < y) ? 1 : 0;
- *     return p, q;  // two results
+ *     int32_t q = (x < y) ? 1 : 0;   // signed form, kept for the import contract
+ *     int32_t r = (x >= y) ? 1 : 0;  // unsigned form, what C pointer compares lower to
+ *     return p, q, r;
  *   }
  * \endcode
  *
- * It combines a floating point comparison, a pointer comparison and the two selects that consume
- * their results. Neither comparison is covered by any other roundtrip graph.
+ * It combines a floating point comparison, a pointer comparison in both signednesses and the
+ * selects that consume their results. No comparison is covered by any other roundtrip graph.
  */
 class ComparisonTest final : public jlm::llvm::RvsdgTest
 {
