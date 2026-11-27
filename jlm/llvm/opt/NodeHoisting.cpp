@@ -247,6 +247,14 @@ NodeHoisting::computeTargetRegion(const rvsdg::Node & node) const
     return context_->getLambdaSubregion();
   }
 
+  // An AllocaOperation allocates a new stack frame slot per dynamic execution of its region.
+  // Hoisting it to a region with a different execution count changes the number
+  // of allocations, so it must never be hoisted.
+  if (is<AllocaOperation>(&node))
+  {
+    return *node.region();
+  }
+
   // Compute target regions for all the inputs of the node
   rvsdg::Region * greatestCommonTargetRegion = nullptr;
 
