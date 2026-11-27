@@ -120,6 +120,7 @@ TEST(DotWriterTests, TestTypeGraph)
   GammaTest gammaTest;
   auto ptrType = PointerType::Create();
   auto bit32Type = jlm::rvsdg::BitType::Create(32);
+  auto integer1Type = IntegerType::create(1);
   auto memType = MemoryStateType::Create();
 
   // Act
@@ -136,7 +137,8 @@ TEST(DotWriterTests, TestTypeGraph)
 
   // Check that nodes exist for the given types
   [[maybe_unused]] auto & ptrNode = typeGraph.GetFromProgramObject<Node>(*ptrType);
-  [[maybe_unused]] auto & bit32Node = typeGraph.GetFromProgramObject<Node>(*ptrType);
+  [[maybe_unused]] auto & bit32Node = typeGraph.GetFromProgramObject<Node>(*bit32Type);
+  [[maybe_unused]] auto & integer1Node = typeGraph.GetFromProgramObject<Node>(*integer1Type);
   auto & memNode = typeGraph.GetFromProgramObject<Node>(*memType);
 
   // Check that the rightmost argument of the function references the memNode type
