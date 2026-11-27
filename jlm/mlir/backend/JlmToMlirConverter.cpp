@@ -4,6 +4,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/operators/AggregateOperations.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
@@ -534,6 +535,21 @@ JlmToMlirConverter::ConvertSimpleNode(
   {
     auto type = ConvertType(*zeroOp->result(0));
     MlirOp = Builder_->create<::mlir::LLVM::ZeroOp>(Builder_->getUnknownLoc(), type);
+  }
+  else if (auto extractOp = dynamic_cast<const llvm::ExtractValueOperation *>(&operation))
+  {
+    // The LLVM dialect keeps the member indices in a DenseI64ArrayAttr rather than as operands,
+    // so they are copied out of the operation and attached there.
+    ::llvm::SmallVector<int64_t> position;
+    for (auto index : *extractOp)
+    {
+      position.push_back(static_cast<int64_t>(index));
+    }
+    MlirOp = Builder_->create<::mlir::LLVM::ExtractValueOp>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*extractOp->result(0)),
+        inputs[0],
+        position);
   }
   else if (
       auto constantPointerNullOp =
