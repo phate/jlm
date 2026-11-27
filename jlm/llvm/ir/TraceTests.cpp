@@ -13,8 +13,6 @@
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/ir/types.hpp>
-#include <jlm/rvsdg/bitstring/comparison.hpp>
-#include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
@@ -133,6 +131,25 @@ TEST(TraceTests, testGetConstantSignedInteger)
   EXPECT_EQ(tryGetConstantSignedInteger(*lambdaOutput), std::nullopt);
 }
 
+TEST(TraceTests, testGetConstantSignedIntegerThroughBitIntegerTypeConversions)
+{
+  using namespace jlm;
+  using namespace jlm::llvm;
+
+  rvsdg::Graph graph;
+  const auto bitType = rvsdg::BitType::Create(32);
+  const auto integerType = IntegerType::create(32);
+  auto & bitConstant = rvsdg::BitConstantOperation::create(
+      graph.GetRootRegion(),
+      rvsdg::BitValueRepresentation(32, -20));
+
+  auto & integerNode = BitToIntegerTypeOperation::createNode(bitConstant, integerType);
+  auto & bitNode = IntegerToBitTypeOperation::createNode(*integerNode.output(0), bitType);
+
+  EXPECT_EQ(tryGetConstantSignedInteger(*integerNode.output(0)), -20);
+  EXPECT_EQ(tryGetConstantSignedInteger(*bitNode.output(0)), -20);
+}
+
 TEST(TraceTests, testGetConstantSignedIntegerExtAndTrunc)
 {
   using namespace jlm;
@@ -164,21 +181,17 @@ TEST(TraceTests, testGetConstantSignedIntegerExtAndTrunc)
   const auto int32Type = rvsdg::BitType::Create(32);
   const auto int8Type = rvsdg::BitType::Create(8);
 
-  auto & bits32Output5 = rvsdg::BitConstantOperation::create(
-      graph.GetRootRegion(),
-      rvsdg::BitValueRepresentation(32, 5));
+  auto & bits32Output5 = *IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 5).output(0);
   auto & sextOutput = SExtOperation::create(64, bits32Output5);
   auto & zextOutput = ZExtOperation::create(64, bits32Output5);
 
-  auto & bits8OutputMinus20 = rvsdg::BitConstantOperation::create(
-      graph.GetRootRegion(),
-      rvsdg::BitValueRepresentation(8, -20));
+  auto & bits8OutputMinus20 =
+      *IntegerConstantOperation::Create(graph.GetRootRegion(), 8, -20).output(0);
   auto & sext2Output = SExtOperation::create(32, bits8OutputMinus20);
   auto & zext2Output = ZExtOperation::create(32, bits8OutputMinus20);
 
-  auto & bits32Output1023 = rvsdg::BitConstantOperation::create(
-      graph.GetRootRegion(),
-      rvsdg::BitValueRepresentation(32, 1023));
+  auto & bits32Output1023 =
+      *IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 1023).output(0);
   auto & truncOutput = TruncOperation::create(8, bits32Output1023);
   auto & sext3Output = SExtOperation::create(32, truncOutput);
   auto & zext3Output = ZExtOperation::create(32, truncOutput);
@@ -230,9 +243,7 @@ TEST(TraceTests, testGetConstantSignedIntegerExtThroughGamma)
   // Arrange
   rvsdg::Graph graph;
 
-  auto & bits32Output = rvsdg::BitConstantOperation::create(
-      graph.GetRootRegion(),
-      rvsdg::BitValueRepresentation(8, -20));
+  auto & bits32Output = *IntegerConstantOperation::Create(graph.GetRootRegion(), 8, -20).output(0);
   auto & controlOutput = rvsdg::ControlConstantOperation::create(graph.GetRootRegion(), 2, 1);
 
   auto & gammaNode = *rvsdg::GammaNode::create(&controlOutput, 2);
@@ -345,9 +356,9 @@ TEST(TraceTests, testTraceAllPointerOriginsTheta)
   auto * incrementedPointer =
       GetElementPtrOperation::create(p.pre, { oneInLoop.output(0) }, int32Type);
   auto * incrementedI =
-      rvsdg::CreateOpNode<rvsdg::bitadd_op>({ i.pre, oneInLoop.output(0) }, 32).output(0);
+      rvsdg::CreateOpNode<IntegerAddOperation>({ i.pre, oneInLoop.output(0) }, 32).output(0);
   auto * isLessThanHundred =
-      rvsdg::CreateOpNode<rvsdg::bitult_op>({ incrementedI, hundredInLoop.output(0) }, 32)
+      rvsdg::CreateOpNode<IntegerUltOperation>({ incrementedI, hundredInLoop.output(0) }, 32)
           .output(0);
   auto & matchNode = rvsdg::MatchOperation::CreateNode(*isLessThanHundred, { { 1, 1 } }, 0, 2);
 

@@ -10,7 +10,6 @@
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/CommonNodeElimination.hpp>
-#include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/gamma.hpp>
@@ -747,7 +746,7 @@ TEST(CommonNodeEliminationTests, GammaInTheta)
   LlvmRvsdgModule rvsdgModule(util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto & constant10 = BitConstantOperation::create(rvsdg.GetRootRegion(), { 32, 10 });
+  auto & constant10 = *IntegerConstantOperation::Create(rvsdg.GetRootRegion(), 32, 10).output(0);
 
   auto thetaNode = ThetaNode::create(&rvsdg.GetRootRegion());
   auto loopVar1 = thetaNode->AddLoopVar(&constant10);
@@ -763,7 +762,7 @@ TEST(CommonNodeEliminationTests, GammaInTheta)
 
   auto user1 = TestOperation::createNode(&thetaRegion, { gammaOutput }, { BitType::Create(32) });
 
-  auto & constant7 = BitConstantOperation::create(thetaRegion, { 32, 7 });
+  auto & constant7 = *IntegerConstantOperation::Create(thetaRegion, 32, 7).output(0);
   loopVar1.post->divert_to(user1->output(0));
   loopVar2.post->divert_to(&constant7);
 

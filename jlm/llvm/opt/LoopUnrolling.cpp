@@ -4,7 +4,7 @@
  */
 
 #include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/llvm/opt/unroll.hpp>
+#include <jlm/llvm/opt/LoopUnrolling.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -49,10 +49,10 @@ public:
 static bool
 is_eqcmp(const rvsdg::Operation & op)
 {
-  return dynamic_cast<const jlm::rvsdg::bituge_op *>(&op)
-      || dynamic_cast<const jlm::rvsdg::bitsge_op *>(&op)
-      || dynamic_cast<const jlm::rvsdg::bitule_op *>(&op)
-      || dynamic_cast<const jlm::rvsdg::bitsle_op *>(&op);
+  return dynamic_cast<const IntegerUgeOperation *>(&op)
+      || dynamic_cast<const IntegerSgeOperation *>(&op)
+      || dynamic_cast<const IntegerUleOperation *>(&op)
+      || dynamic_cast<const IntegerSleOperation *>(&op);
 }
 
 static bool
@@ -60,8 +60,7 @@ is_theta_invariant(const jlm::rvsdg::Output * output)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(output->region()->node()));
 
-  if (jlm::rvsdg::is<rvsdg::BitConstantOperation>(
-          rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*output)))
+  if (jlm::rvsdg::is<IntegerConstantOperation>(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*output)))
     return true;
 
   auto theta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*output);
@@ -80,7 +79,7 @@ push_from_theta(jlm::rvsdg::Output * output)
     return argument;
 
   auto tmp = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*output);
-  JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::BitConstantOperation>(tmp));
+  JLM_ASSERT(jlm::rvsdg::is<IntegerConstantOperation>(tmp));
   JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(tmp->region()->node()));
   auto theta = static_cast<rvsdg::ThetaNode *>(tmp->region()->node());
 
@@ -97,7 +96,7 @@ is_idv(jlm::rvsdg::Input * input)
   using namespace jlm::rvsdg;
 
   auto node = TryGetOwnerNode<SimpleNode>(*input);
-  JLM_ASSERT(is<bitadd_op>(node) || is<bitsub_op>(node));
+  JLM_ASSERT(is<IntegerAddOperation>(node) || is<IntegerSubOperation>(node));
 
   if (auto theta = rvsdg::TryGetRegionParentNode<ThetaNode>(*input->origin()))
   {
@@ -108,10 +107,10 @@ is_idv(jlm::rvsdg::Input * input)
   return false;
 }
 
-std::unique_ptr<jlm::rvsdg::BitValueRepresentation>
+std::unique_ptr<IntegerValueRepresentation>
 LoopUnrollInfo::niterations() const noexcept
 {
-  if (!is_known() || step_value() == 0)
+  if (!is_known() || *step_value() == 0)
     return nullptr;
 
   auto start = is_additive() ? *init_value() : *end_value();
@@ -128,7 +127,25 @@ LoopUnrollInfo::niterations() const noexcept
   if (range.umod(step) != 0)
     return nullptr;
 
-  return std::make_unique<jlm::rvsdg::BitValueRepresentation>(range.udiv(step));
+  return std::make_unique<IntegerValueRepresentation>(range.udiv(step));
+}
+
+static bool
+is_integer_comparison(const rvsdg::SimpleNode * node)
+{
+  using namespace jlm::rvsdg;
+  return is<IntegerEqOperation>(node) || is<IntegerNeOperation>(node)
+      || is<IntegerSgeOperation>(node) || is<IntegerSgtOperation>(node)
+      || is<IntegerSleOperation>(node) || is<IntegerSltOperation>(node)
+      || is<IntegerUgeOperation>(node) || is<IntegerUgtOperation>(node)
+      || is<IntegerUleOperation>(node) || is<IntegerUltOperation>(node);
+}
+
+size_t
+LoopUnrollInfo::nbits() const noexcept
+{
+  JLM_ASSERT(is_integer_comparison(cmpnode()));
+  return static_cast<const IntegerBinaryOperation &>(cmpnode()->GetOperation()).Type().nbits();
 }
 
 std::unique_ptr<LoopUnrollInfo>
@@ -141,7 +158,7 @@ LoopUnrollInfo::create(rvsdg::ThetaNode * theta)
     return nullptr;
 
   auto cmpnode = rvsdg::TryGetOwnerNode<SimpleNode>(*matchNode->input(0)->origin());
-  if (!is<BitCompareOperation>(cmpnode))
+  if (!is_integer_comparison(cmpnode))
     return nullptr;
 
   auto o0 = cmpnode->input(0)->origin();
@@ -151,7 +168,7 @@ LoopUnrollInfo::create(rvsdg::ThetaNode * theta)
     return nullptr;
 
   auto armnode = rvsdg::TryGetOwnerNode<SimpleNode>(*(end == o0 ? o1 : o0));
-  if (!is<bitadd_op>(armnode) && !is<bitsub_op>(armnode))
+  if (!is<IntegerAddOperation>(armnode) && !is<IntegerSubOperation>(armnode))
     return nullptr;
   if (armnode->ninputs() != 2)
     return nullptr;
@@ -256,7 +273,7 @@ unroll_theta(const LoopUnrollInfo & ui, rvsdg::SubstitutionMap & smap, size_t fa
     auto end = remainder.mul(sv);
     auto ev = ui.is_additive() ? ui.end_value()->sub(end) : ui.end_value()->add(end);
 
-    auto c = &rvsdg::BitConstantOperation::create(*unrolled_theta->subregion(), ev);
+    auto c = IntegerConstantOperation::Create(*unrolled_theta->subregion(), ev).output(0);
     input->divert_to(c);
   }
 }
@@ -308,7 +325,9 @@ unroll_known_theta(const LoopUnrollInfo & ui, size_t factor)
   auto original_theta = ui.theta();
   auto nbits = ui.nbits();
 
-  JLM_ASSERT(niterations != 0);
+  // A theta always executes at least once; zero is not a valid trip count.
+  if (niterations->to_uint() == 0)
+    return;
   if (niterations->ule({ nbits, (int64_t)factor }) == '1')
   {
     /*
@@ -333,80 +352,115 @@ unroll_known_theta(const LoopUnrollInfo & ui, size_t factor)
   add_remainder(ui, smap, factor);
 }
 
-static jlm::rvsdg::Output *
-create_unrolled_gamma_predicate(const LoopUnrollInfo & ui, size_t factor)
+static rvsdg::Output *
+advance_idv(
+    const LoopUnrollInfo & ui,
+    rvsdg::Region & region,
+    rvsdg::Output * value,
+    rvsdg::Output * step)
+{
+  auto first = ui.armnode()->input(0)->origin() == ui.idv();
+  return rvsdg::SimpleNode::Create(
+             region,
+             ui.armoperation().copy(),
+             first ? std::vector<rvsdg::Output *>{ value, step }
+                   : std::vector<rvsdg::Output *>{ step, value })
+      .output(0);
+}
+
+static rvsdg::Output *
+loop_comparison(
+    const LoopUnrollInfo & ui,
+    rvsdg::Region & region,
+    rvsdg::Output * value,
+    rvsdg::Output * end)
+{
+  auto first = ui.cmpnode()->input(0)->origin() == ui.end();
+  return rvsdg::SimpleNode::Create(
+             region,
+             ui.cmpoperation().copy(),
+             first ? std::vector<rvsdg::Output *>{ end, value }
+                   : std::vector<rvsdg::Output *>{ value, end })
+      .output(0);
+}
+
+static rvsdg::Output *
+batch_guard(
+    const LoopUnrollInfo & ui,
+    rvsdg::Region & region,
+    rvsdg::Output * value,
+    rvsdg::Output * step,
+    rvsdg::Output * end,
+    size_t count)
+{
+  // Check each original comparison, preserving wrapping and operand order.
+  JLM_ASSERT(count >= 1);
+  rvsdg::Output * guard = nullptr;
+  for (size_t i = 0; i < count; ++i)
+  {
+    auto cmp = loop_comparison(ui, region, value, end);
+    guard = guard ? IntegerAndOperation::createNode(1, *guard, *cmp).output(0) : cmp;
+    if (i + 1 < count)
+      value = advance_idv(ui, region, value, step);
+  }
+  return guard;
+}
+
+static rvsdg::Output *
+predicate(rvsdg::Output * condition)
+{
+  return rvsdg::MatchOperation::CreateNode(*condition, { { 1, 1 } }, 0, 2).output(0);
+}
+
+static rvsdg::Output *
+first_batch_guard(const LoopUnrollInfo & ui, size_t factor)
 {
   auto region = ui.theta()->region();
-  auto nbits = ui.nbits();
   auto step = ui.theta()->MapPreLoopVar(*ui.step()).input->origin();
   auto end = ui.theta()->MapPreLoopVar(*ui.end()).input->origin();
-
-  auto uf = &rvsdg::BitConstantOperation::create(*region, { nbits, static_cast<int64_t>(factor) });
-  auto mul = jlm::rvsdg::bitmul_op::create(nbits, step, uf);
-  auto arm =
-      rvsdg::SimpleNode::Create(*region, ui.armoperation().copy(), { ui.init(), mul }).output(0);
-  /* FIXME: order of operands */
-  auto cmp = rvsdg::SimpleNode::Create(*region, ui.cmpoperation().copy(), { arm, end }).output(0);
-  auto & predNode = rvsdg::MatchOperation::CreateNode(*cmp, { { 1, 1 } }, 0, 2);
-
-  return predNode.output(0);
+  // The first iteration is unconditional; only the remaining copies need checks.
+  auto value = advance_idv(ui, *region, ui.init(), step);
+  return batch_guard(ui, *region, value, step, end, factor - 1);
 }
 
-static jlm::rvsdg::Output *
-create_unrolled_theta_predicate(
-    rvsdg::Region *,
-    const rvsdg::SubstitutionMap & smap,
-    const LoopUnrollInfo & ui,
-    size_t factor)
+static rvsdg::Output *
+next_batch_guard(const rvsdg::SubstitutionMap & smap, const LoopUnrollInfo & ui, size_t factor)
 {
-  using namespace jlm::rvsdg;
-
-  auto region = smap.lookup(*ui.cmpnode()->output(0)).region();
-  auto cmpnode = rvsdg::TryGetOwnerNode<Node>(smap.lookup(*ui.cmpnode()->output(0)));
+  auto cmp = &smap.lookup(*ui.cmpnode()->output(0));
+  auto region = cmp->region();
+  auto cmpnode = rvsdg::TryGetOwnerNode<rvsdg::Node>(*cmp);
   auto step = &smap.lookup(*ui.step());
   auto end = &smap.lookup(*ui.end());
-  auto nbits = ui.nbits();
-
-  auto i0 = cmpnode->input(0);
-  auto i1 = cmpnode->input(1);
-  auto iend = i0->origin() == end ? i0 : i1;
-  auto idv = i0->origin() == end ? i1 : i0;
-
-  auto uf = &BitConstantOperation::create(*region, { nbits, static_cast<int64_t>(factor) });
-  auto mul = bitmul_op::create(nbits, step, uf);
-  auto arm =
-      SimpleNode::Create(*region, ui.armoperation().copy(), { idv->origin(), mul }).output(0);
-  /* FIXME: order of operands */
-  auto cmp =
-      SimpleNode::Create(*region, ui.cmpoperation().copy(), { arm, iend->origin() }).output(0);
-  auto & predNode = MatchOperation::CreateNode(*cmp, { { 1, 1 } }, 0, 2);
-
-  return predNode.output(0);
+  auto idv = cmpnode->input(cmpnode->input(0)->origin() == end ? 1 : 0)->origin();
+  return batch_guard(ui, *region, idv, step, end, factor);
 }
 
-static jlm::rvsdg::Output *
-create_residual_gamma_predicate(const rvsdg::SubstitutionMap & smap, const LoopUnrollInfo & ui)
+static rvsdg::Output *
+residual_guard(
+    const rvsdg::SubstitutionMap & smap,
+    const LoopUnrollInfo & ui,
+    rvsdg::Output * firstGuard)
 {
   auto region = ui.theta()->region();
   auto idv = &smap.lookup(*ui.theta()->MapPreLoopVar(*ui.idv()).output);
   auto end = ui.theta()->MapPreLoopVar(*ui.end()).input->origin();
-
-  /* FIXME: order of operands */
-  auto cmp = rvsdg::SimpleNode::Create(*region, ui.cmpoperation().copy(), { idv, end }).output(0);
-  auto & predNode = rvsdg::MatchOperation::CreateNode(*cmp, { { 1, 1 } }, 0, 2);
-
-  return predNode.output(0);
+  auto cmp = loop_comparison(ui, *region, idv, end);
+  // A declined first batch must still execute the original do-while loop.
+  auto one = IntegerConstantOperation::Create(*region, 1, 1).output(0);
+  auto declined = IntegerXorOperation::createNode(1, *firstGuard, *one).output(0);
+  return IntegerOrOperation::createNode(1, *cmp, *declined).output(0);
 }
 
 static void
 unroll_unknown_theta(const LoopUnrollInfo & ui, size_t factor)
 {
   auto otheta = ui.theta();
+  auto firstGuard = first_batch_guard(ui, factor);
 
   /* handle gamma with unrolled loop */
   rvsdg::SubstitutionMap smap;
   {
-    auto pred = create_unrolled_gamma_predicate(ui, factor);
+    auto pred = predicate(firstGuard);
     auto ngamma = rvsdg::GammaNode::create(pred, 2);
     auto ntheta = rvsdg::ThetaNode::create(ngamma->subregion(1));
 
@@ -420,7 +474,7 @@ unroll_unknown_theta(const LoopUnrollInfo & ui, size_t factor)
     }
 
     unroll_body(otheta, ntheta->subregion(), rmap[1], factor);
-    pred = create_unrolled_theta_predicate(ntheta->subregion(), rmap[1], ui, factor);
+    pred = predicate(next_batch_guard(rmap[1], ui, factor));
     ntheta->set_predicate(pred);
 
     auto oldLoopVars = otheta->GetLoopVars();
@@ -444,7 +498,7 @@ unroll_unknown_theta(const LoopUnrollInfo & ui, size_t factor)
 
   /* handle gamma for residual iterations */
   {
-    auto pred = create_residual_gamma_predicate(smap, ui);
+    auto pred = predicate(residual_guard(smap, ui, firstGuard));
     auto ngamma = rvsdg::GammaNode::create(pred, 2);
     auto ntheta = rvsdg::ThetaNode::create(ngamma->subregion(1));
 

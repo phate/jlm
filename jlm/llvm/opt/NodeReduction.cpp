@@ -54,6 +54,8 @@ NodeReduction::Statistics::End(const rvsdg::Graph & graph) noexcept
       "#LambdaExitMemoryStateMergeReductions",
       counters.numLambdaExitMemoryStateMergeReductions);
   AddMeasurement("#MatchReductions", counters.numMatchReductions);
+  AddMeasurement("#BitToIntegerTypeReductions", counters.numBitToIntegerTypeReductions);
+  AddMeasurement("#IntegerToBitTypeReductions", counters.numIntegerToBitTypeReductions);
   AddMeasurement("#SExtReductions", counters.numSExtReductions);
   AddMeasurement("#ZExtReductions", counters.numZExtReductions);
   AddMeasurement("#TruncReductions", counters.numTruncReductions);
@@ -150,6 +152,12 @@ NodeReduction::Statistics::getMaxIterationsPerRegion() const noexcept
 
 static std::vector<rvsdg::NodeNormalization<rvsdg::MatchOperation>>
     matchOperationNormalizations({ foldMatchOperationWithConstant });
+
+static std::vector<rvsdg::NodeNormalization<BitToIntegerTypeOperation>>
+    bitToIntegerTypeNormalizations({ BitToIntegerTypeOperation::normalizeInverse });
+
+static std::vector<rvsdg::NodeNormalization<IntegerToBitTypeOperation>>
+    integerToBitTypeNormalizations({ IntegerToBitTypeOperation::normalizeInverse });
 
 static std::vector<rvsdg::NodeNormalization<SExtOperation>>
     sextOperationNormalizations({ SExtOperation::foldConstant });
@@ -480,6 +488,20 @@ NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
         simpleNode,
         matchOperationNormalizations,
         Statistics_->getReductionCounters().numMatchReductions);
+  }
+  if (is<BitToIntegerTypeOperation>(&simpleNode))
+  {
+    return reduceSimpleNode<BitToIntegerTypeOperation>(
+        simpleNode,
+        bitToIntegerTypeNormalizations,
+        Statistics_->getReductionCounters().numBitToIntegerTypeReductions);
+  }
+  if (is<IntegerToBitTypeOperation>(&simpleNode))
+  {
+    return reduceSimpleNode<IntegerToBitTypeOperation>(
+        simpleNode,
+        integerToBitTypeNormalizations,
+        Statistics_->getReductionCounters().numIntegerToBitTypeReductions);
   }
   if (is<SExtOperation>(&simpleNode))
   {

@@ -5,8 +5,8 @@
 
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/LoopUnswitching.hpp>
+#include <jlm/llvm/opt/NodeSinking.hpp>
 #include <jlm/llvm/opt/PredicateCorrelation.hpp>
-#include <jlm/llvm/opt/pull.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/substitution.hpp>

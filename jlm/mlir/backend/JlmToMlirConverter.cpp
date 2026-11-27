@@ -511,6 +511,12 @@ JlmToMlirConverter::ConvertSimpleNode(
         arrayType,
         inputs);
   }
+  else if (auto arrOp = dynamic_cast<const llvm::ConstantArrayOperation *>(&operation))
+  {
+    auto arrayType = ConvertType(*arrOp->result(0));
+    MlirOp =
+        Builder_->create<::mlir::jlm::ConstantArray>(Builder_->getUnknownLoc(), arrayType, inputs);
+  }
   else if (auto structOp = dynamic_cast<const llvm::ConstantStructOperation *>(&operation))
   {
     auto structType = ConvertType(*structOp->result(0));
@@ -769,12 +775,12 @@ JlmToMlirConverter::ConvertSimpleNode(
 
     MlirOp = Builder_->create<::mlir::jlm::Load>(
         Builder_->getUnknownLoc(),
-        ConvertType(*load_op->result(0)),                      // loaded value
-        outputIoState,                                         // output I/O state
-        GetMemStateRange(load_op->NumMemoryStates()),          // output memory states
-        inputs[0],                                             // pointer
-        Builder_->getUI32IntegerAttr(load_op->GetAlignment()), // alignment
-        Builder_->getBoolAttr(isVolatile),                     // isVolatile
+        ConvertType(*load_op->result(0)),                     // loaded value
+        outputIoState,                                        // output I/O state
+        GetMemStateRange(load_op->NumMemoryStates()),         // output memory states
+        inputs[0],                                            // pointer
+        Builder_->getI64IntegerAttr(load_op->GetAlignment()), // alignment
+        Builder_->getBoolAttr(isVolatile),                    // isVolatile
         inputIoState,
         ::mlir::ValueRange(
             { std::next(inputs.begin(), isVolatile ? 2 : 1), inputs.end() })); // inputMemStates
@@ -791,11 +797,11 @@ JlmToMlirConverter::ConvertSimpleNode(
     MlirOp = Builder_->create<::mlir::jlm::Store>(
         Builder_->getUnknownLoc(),
         outputIoState,
-        GetMemStateRange(store_op->NumMemoryStates()),          // output memory states
-        inputs[0],                                              // pointer
-        inputs[1],                                              // value
-        Builder_->getUI32IntegerAttr(store_op->GetAlignment()), // alignment
-        Builder_->getBoolAttr(isVolatile),                      // isVolatile
+        GetMemStateRange(store_op->NumMemoryStates()),         // output memory states
+        inputs[0],                                             // pointer
+        inputs[1],                                             // value
+        Builder_->getI64IntegerAttr(store_op->GetAlignment()), // alignment
+        Builder_->getBoolAttr(isVolatile),                     // isVolatile
         inputIoState,
         ::mlir::ValueRange(
             { std::next(inputs.begin(), isVolatile ? 3 : 2), inputs.end() })); // inputMemStates
@@ -1148,7 +1154,8 @@ JlmToMlirConverter::ConvertDelta(
       ::llvm::StringRef(op->name()),
       ::llvm::StringRef(llvm::linkageToString(op->linkage())),
       ::llvm::StringRef(op->Section()),
-      op->constant());
+      op->constant(),
+      Builder_->getI64IntegerAttr(op->getAlignment()));
   block.push_back(delta);
   auto & deltaBlock = delta.getRegion().emplaceBlock();
   auto regionResults = ConvertRegion(*deltaNode.subregion(), deltaBlock);

@@ -9,6 +9,21 @@
 namespace jlm::llvm
 {
 
+static size_t
+shiftAmount(const IntegerValueRepresentation & value, const size_t width)
+{
+  size_t shift = 0;
+  const auto bits = value.str();
+  for (size_t i = value.nbits(); i-- > 0;)
+  {
+    const auto bit = bits[i];
+    if (shift >= width || shift > (width - 1) / 2)
+      return width;
+    shift = shift * 2 + (bit == '1');
+  }
+  return std::min(shift, width);
+}
+
 template<typename TBinOp>
 static IntegerValueRepresentation
 foldBinaryOperation(const IntegerValueRepresentation & r1, const IntegerValueRepresentation & r2)
@@ -50,11 +65,11 @@ foldBinaryOperation(const IntegerValueRepresentation & r1, const IntegerValueRep
   else if constexpr (std::is_same_v<TBinOp, IntegerURemOperation>)
     return IntegerValueRepresentation(r1.umod(r2));
   else if constexpr (std::is_same_v<TBinOp, IntegerAShrOperation>)
-    return IntegerValueRepresentation(r1.ashr(r2.to_uint()));
+    return IntegerValueRepresentation(r1.ashr(shiftAmount(r2, r1.nbits())));
   else if constexpr (std::is_same_v<TBinOp, IntegerShlOperation>)
-    return IntegerValueRepresentation(r1.shl(r2.to_uint()));
+    return IntegerValueRepresentation(r1.shl(shiftAmount(r2, r1.nbits())));
   else if constexpr (std::is_same_v<TBinOp, IntegerLShrOperation>)
-    return IntegerValueRepresentation(r1.shr(r2.to_uint()));
+    return IntegerValueRepresentation(r1.shr(shiftAmount(r2, r1.nbits())));
   else if constexpr (std::is_same_v<TBinOp, IntegerOrOperation>)
     return IntegerValueRepresentation(r1.lor(r2));
   else if constexpr (std::is_same_v<TBinOp, IntegerAndOperation>)
@@ -134,7 +149,7 @@ IntegerConstantOperation::copy() const
 std::string
 IntegerConstantOperation::debug_string() const
 {
-  if (Representation().is_known() && Representation().nbits() <= 64)
+  if (Representation().nbits() <= 64)
     return util::strfmt("I", Representation().nbits(), "(", Representation().to_uint(), ")");
 
   return Representation().str();

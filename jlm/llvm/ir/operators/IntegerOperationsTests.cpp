@@ -39,10 +39,10 @@ TestFoldConstants(const FoldConstantsTestInput & input)
 
   auto & c1 = IntegerConstantOperation::Create(
       graph.GetRootRegion(),
-      BitValueRepresentation(input.numBitsC1, input.c1));
+      IntegerValueRepresentation(input.numBitsC1, input.c1));
   auto & c2 = IntegerConstantOperation::Create(
       graph.GetRootRegion(),
-      BitValueRepresentation(input.numBitsC2, input.c2));
+      IntegerValueRepresentation(input.numBitsC2, input.c2));
 
   auto & node1 = Operation::createNode(32, *c1.output(0), *c2.output(0));
 
@@ -287,6 +287,24 @@ TEST(IntegerShlOperationTest, foldConstants)
 {
   TestFoldConstants<IntegerShlOperation>({ 0x3, 32, 2, 32, 0xc, 32 });
   TestFoldConstants<IntegerShlOperation>({ 0x400, 32, 2, 32, 0x1000, 32 });
+}
+
+TEST(IntegerShlOperationTest, foldWideShiftAmount)
+{
+  using namespace jlm::rvsdg;
+  Graph graph;
+  auto & region = graph.GetRootRegion();
+  auto & value = IntegerConstantOperation::Create(region, 128, 1);
+  auto amount = IntegerValueRepresentation(128, 1).shl(100);
+  auto & shift = IntegerConstantOperation::Create(region, amount);
+  auto & node = IntegerShlOperation::createNode(128, *value.output(0), *shift.output(0));
+  auto result = IntegerShlOperation::foldConstants(
+      static_cast<const IntegerShlOperation &>(node.GetOperation()),
+      { value.output(0), shift.output(0) });
+  ASSERT_TRUE(result);
+  auto [_, operation] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*result->at(0));
+  ASSERT_TRUE(operation);
+  EXPECT_EQ(operation->Representation(), IntegerValueRepresentation(128, 0));
 }
 
 TEST(IntegerLShrOperationTest, foldConstants)

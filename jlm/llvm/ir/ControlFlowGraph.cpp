@@ -4,7 +4,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/ir/basic-block.hpp>
+#include <jlm/llvm/ir/BasicBlock.hpp>
 #include <jlm/llvm/ir/ipgraph.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/util/Program.hpp>

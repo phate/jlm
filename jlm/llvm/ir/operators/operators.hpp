@@ -575,6 +575,8 @@ public:
     {
     case fpsize::half:
       return ::llvm::APFloat::getZero(::llvm::APFloat::IEEEhalf());
+    case fpsize::bfloat:
+      return ::llvm::APFloat::getZero(::llvm::APFloat::BFloat());
     case fpsize::flt:
       return ::llvm::APFloat::getZero(::llvm::APFloat::IEEEsingle());
     case fpsize::dbl:

@@ -7,7 +7,6 @@
 
 #include <jlm/llvm/ir/aggregation.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
-#include <jlm/llvm/ir/print.hpp>
 
 static bool
 is_entry(const jlm::llvm::AggregationNode * node)
@@ -99,8 +98,8 @@ TEST(ViewTests, test_linear_reduction)
   auto cfg = setup_cfg(module);
 
   auto root = jlm::llvm::aggregate(*cfg);
-  jlm::llvm::AggregationNode::normalize(*root);
-  jlm::llvm::print(*root, stdout);
+  AggregationNode::normalize(*root);
+  std::cout << AggregationNode::toAscii(*root);
 
   verify_aggtree(*root);
 }
@@ -149,8 +148,8 @@ TEST(ViewTests, test_loop_reduction)
   auto cfg = setup_cfg(module);
 
   auto root = jlm::llvm::aggregate(*cfg);
-  jlm::llvm::AggregationNode::normalize(*root);
-  jlm::llvm::print(*root, stdout);
+  AggregationNode::normalize(*root);
+  std::cout << AggregationNode::toAscii(*root);
 
   verify_aggtree(*root);
 }
@@ -216,8 +215,8 @@ TEST(ViewTests, test_branch_reduction)
   auto cfg = setup_cfg(module);
 
   auto root = jlm::llvm::aggregate(*cfg);
-  jlm::llvm::AggregationNode::normalize(*root);
-  jlm::llvm::print(*root, stdout);
+  AggregationNode::normalize(*root);
+  std::cout << AggregationNode::toAscii(*root);
 
   verify_aggtree(*root);
 }
@@ -292,8 +291,8 @@ TEST(ViewTests, test_branch_loop_reduction)
   auto cfg = setup_cfg(module);
 
   auto root = jlm::llvm::aggregate(*cfg);
-  jlm::llvm::AggregationNode::normalize(*root);
-  jlm::llvm::print(*root, stdout);
+  AggregationNode::normalize(*root);
+  std::cout << AggregationNode::toAscii(*root);
 
   verify_aggtree(*root);
 }
@@ -358,8 +357,8 @@ TEST(ViewTests, test_loop_branch_reduction)
   auto cfg = setup_cfg(module);
 
   auto root = jlm::llvm::aggregate(*cfg);
-  jlm::llvm::AggregationNode::normalize(*root);
-  jlm::llvm::print(*root, stdout);
+  AggregationNode::normalize(*root);
+  std::cout << AggregationNode::toAscii(*root);
 
   verify_aggtree(*root);
 }
@@ -418,8 +417,8 @@ TEST(ViewTests, test_ifthen_reduction)
   auto cfg = setup_cfg(module);
 
   auto root = jlm::llvm::aggregate(*cfg);
-  jlm::llvm::AggregationNode::normalize(*root);
-  jlm::llvm::print(*root, stdout);
+  AggregationNode::normalize(*root);
+  std::cout << AggregationNode::toAscii(*root);
 
   verify_aggtree(*root);
 }
@@ -476,8 +475,8 @@ TEST(AggregationTests, test_branch_and_loop)
   auto cfg = setup_cfg(module);
 
   auto root = jlm::llvm::aggregate(*cfg);
-  jlm::llvm::AggregationNode::normalize(*root);
-  jlm::llvm::print(*root, stdout);
+  AggregationNode::normalize(*root);
+  std::cout << AggregationNode::toAscii(*root);
 
   verify_aggtree(*root);
 }

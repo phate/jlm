@@ -6,7 +6,7 @@
 #include <gtest/gtest.h>
 
 #include <jlm/llvm/frontend/ControlFlowRestructuring.hpp>
-#include <jlm/llvm/ir/basic-block.hpp>
+#include <jlm/llvm/ir/BasicBlock.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
@@ -119,7 +119,7 @@ TEST(ControlFlowRestructuringTests, DoWhileLoopWithWrongRepetitionEdge)
   bb1->add_outedge(bb1);
   bb1->add_outedge(cfg.exit());
 
-  auto c1Operation = std::make_unique<IntegerConstantOperation>(BitValueRepresentation(1, 1));
+  auto c1Operation = std::make_unique<IntegerConstantOperation>(IntegerValueRepresentation(1, 1));
   bb1->append_last(ThreeAddressCode::create(std::move(c1Operation), {}));
   auto matchOperation = std::unique_ptr<MatchOperation>(new MatchOperation(1, { { 1, 1 } }, 0, 2));
   bb1->append_last(

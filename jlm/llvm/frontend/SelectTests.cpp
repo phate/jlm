@@ -8,7 +8,6 @@
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
-#include <jlm/llvm/ir/print.hpp>
 
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/IRBuilder.h>
@@ -58,7 +57,7 @@ TEST(SelectTests, test_scalar_select)
   llvmModule->print(llvm::errs(), nullptr);
 
   auto ipgmod = jlm::llvm::ConvertLlvmModule(*llvmModule);
-  print(*ipgmod, stdout);
+  std::cout << jlm::llvm::InterProceduralGraph::toAscii(ipgmod->ipgraph()) << std::endl;
 
   EXPECT_TRUE(contains<jlm::llvm::SelectOperation>(*ipgmod, "f"));
 }
@@ -92,7 +91,7 @@ TEST(SelectTests, test_vector_select)
   llvmModule->print(llvm::errs(), nullptr);
 
   auto ipgmod = jlm::llvm::ConvertLlvmModule(*llvmModule);
-  print(*ipgmod, stdout);
+  std::cout << jlm::llvm::InterProceduralGraph::toAscii(ipgmod->ipgraph()) << std::endl;
 
   EXPECT_TRUE(contains<jlm::llvm::VectorSelectOperation>(*ipgmod, "f"));
 }

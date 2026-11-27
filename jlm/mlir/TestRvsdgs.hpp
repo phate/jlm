@@ -212,17 +212,11 @@ public:
  * \code{.c}
  *   int64_t f(void * p)
  *   {
- *     return (int64_t) p + (int32_t) p;
+ *     return (int64_t) p + (int64_t)(int32_t) p;
  *   }
  * \endcode
  *
- * The same pointer is converted twice, to 64 and to 32 bits, so the fixture covers both the
- * common case where the destination matches the address size and one where it does not. The
- * 32-bit result is sign extended and added to the 64-bit result, which makes both conversions
- * reachable from the lambda result. The width of a conversion is only visible through the
- * operation's result type, and \ref jlm::llvm::PtrToIntOperation compares both of its types for
- * equality where the reverse \ref jlm::llvm::IntToPtrOperation ignores its argument type, so a
- * conversion that dropped the width fails here rather than passing silently.
+ * The pointer is converted to both 64 and 32 bits.
  *
  * \see jlm::llvm::Bits2PtrTest
  */
@@ -238,10 +232,6 @@ public:
   jlm::rvsdg::SimpleNode * ptrToIntNarrow;
 
   jlm::rvsdg::SimpleNode * ptrToIntWide;
-
-  jlm::rvsdg::SimpleNode * sext;
-
-  jlm::rvsdg::SimpleNode * add;
 };
 
 /** \brief FloatBinaryTest class
@@ -397,6 +387,31 @@ public:
   jlm::rvsdg::DeltaNode * constantDelta;
 };
 
+/** \brief DeltaAlignmentTest class
+ *
+ * This class sets up an RVSDG representing the following declarations:
+ *
+ * \code{.c}
+ *   __attribute__((aligned(16))) int narrowGlobal = 1;
+ *   __attribute__((aligned(64))) int wideGlobal = 1;
+ * \endcode
+ *
+ * We use alignments other than the default of 4, which is for all other deltas.
+ *
+ * \see ConstantDeltaTest
+ */
+class DeltaAlignmentTest final : public jlm::llvm::RvsdgTest
+{
+private:
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
+  SetupRvsdg() override;
+
+public:
+  jlm::rvsdg::DeltaNode * narrowDelta;
+
+  jlm::rvsdg::DeltaNode * wideDelta;
+};
+
 /** \brief GlobalArrayTest class
  *
  * This class sets up an RVSDG representing the following declarations:
@@ -454,6 +469,40 @@ public:
   jlm::rvsdg::SimpleNode * identifiedStruct;
 
   jlm::rvsdg::SimpleNode * literalStruct;
+};
+
+/** \brief MixedArrayTest class
+ *
+ * This class sets up an RVSDG representing the following declarations:
+ *
+ * \code{.c}
+ *   uint32_t array[2] = { 1, 2 };
+ *   uint32_t dataArray[2] = { 3, 4 };
+ * \endcode
+ *
+ * Both are arrays of two elements held in a delta, but they are built by different operations: the
+ * aggregate \ref jlm::llvm::ConstantArrayOperation and the element-wise \ref
+ * jlm::llvm::ConstantDataArrayOperation. The two carry the same operand and result signature, so
+ * nothing in the types separates them; each maps to its own MLIR op and coming back as the wrong
+ * one is what CompareOperations catches. The sibling \ref jlm::mlir::GlobalArrayTest covers the
+ * types.
+ *
+ * \see jlm::mlir::GlobalArrayTest
+ */
+class MixedArrayTest final : public jlm::llvm::RvsdgTest
+{
+private:
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
+  SetupRvsdg() override;
+
+public:
+  jlm::rvsdg::DeltaNode * arrayDelta;
+
+  jlm::rvsdg::DeltaNode * dataDelta;
+
+  jlm::rvsdg::SimpleNode * constantArray;
+
+  jlm::rvsdg::SimpleNode * constantDataArray;
 };
 
 /** \brief WideMemoryNodesTest class

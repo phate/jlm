@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LLVM_OPT_PULL_HPP
-#define JLM_LLVM_OPT_PULL_HPP
+#ifndef JLM_LLVM_OPT_NODE_SINKING_HPP
+#define JLM_LLVM_OPT_NODE_SINKING_HPP
 
 #include <jlm/rvsdg/Transformation.hpp>
 

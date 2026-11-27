@@ -11,7 +11,6 @@
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/ir/types.hpp>
-#include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/SimpleNode.hpp>
@@ -103,7 +102,7 @@ tryGetConstantSignedInteger(const rvsdg::Output & output)
       constant)
   {
     const auto & rep = constant->Representation();
-    if (rep.is_known() && rep.nbits() <= 64)
+    if (rep.nbits() <= 64)
       return rep.to_int();
     return std::nullopt;
   }
@@ -116,6 +115,20 @@ tryGetConstantSignedInteger(const rvsdg::Output & output)
     if (rep.is_known() && rep.nbits() <= 64)
       return rep.to_int();
     return std::nullopt;
+  }
+
+  if (const auto [node, conversionOp] =
+          rvsdg::TryGetSimpleNodeAndOptionalOp<BitToIntegerTypeOperation>(normalized);
+      conversionOp)
+  {
+    return tryGetConstantSignedInteger(*node->input(0)->origin());
+  }
+
+  if (const auto [node, conversionOp] =
+          rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerToBitTypeOperation>(normalized);
+      conversionOp)
+  {
+    return tryGetConstantSignedInteger(*node->input(0)->origin());
   }
 
   if (const auto [sextNode, sextOp] =

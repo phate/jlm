@@ -15,10 +15,10 @@ libllvm_SOURCES = \
     jlm/llvm/ir/aggregation.cpp \
     jlm/llvm/ir/Annotation.cpp \
     jlm/llvm/ir/attribute.cpp \
-    jlm/llvm/ir/basic-block.cpp \
+    jlm/llvm/ir/BasicBlock.cpp \
     jlm/llvm/ir/CallingConvention.cpp \
     jlm/llvm/ir/CallSummary.cpp \
-    jlm/llvm/ir/cfg.cpp \
+    jlm/llvm/ir/ControlFlowGraph.cpp \
     jlm/llvm/ir/domtree.cpp \
     jlm/llvm/ir/ipgraph.cpp \
     jlm/llvm/ir/ipgraph-module.cpp \
@@ -47,7 +47,6 @@ libllvm_SOURCES = \
     jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.cpp \
     jlm/llvm/ir/operators/StdLibIntrinsicOperations.cpp \
     jlm/llvm/ir/operators/Store.cpp \
-    jlm/llvm/ir/print.cpp \
     jlm/llvm/ir/RvsdgModule.cpp \
     jlm/llvm/ir/ssa.cpp \
     jlm/llvm/ir/tac.cpp \
@@ -70,21 +69,21 @@ libllvm_SOURCES = \
     jlm/llvm/opt/AggregateAllocaSplitting.cpp \
     jlm/llvm/opt/CommonNodeElimination.cpp \
     jlm/llvm/opt/DeadNodeElimination.cpp \
+    jlm/llvm/opt/FunctionInlining.cpp \
     jlm/llvm/opt/IfConversion.cpp \
-    jlm/llvm/opt/inlining.cpp \
     jlm/llvm/opt/InvariantValueRedirection.cpp \
     jlm/llvm/opt/IOBarrierElimination.cpp \
     jlm/llvm/opt/LoadChainSeparation.cpp \
     jlm/llvm/opt/LoopStrengthReduction.cpp \
+    jlm/llvm/opt/LoopUnrolling.cpp \
     jlm/llvm/opt/LoopUnswitching.cpp \
     jlm/llvm/opt/NodeHoisting.cpp \
     jlm/llvm/opt/NodeReduction.cpp \
+    jlm/llvm/opt/NodeSinking.cpp \
     jlm/llvm/opt/PredicateCorrelation.cpp \
-    jlm/llvm/opt/pull.cpp \
     jlm/llvm/opt/RvsdgTreePrinter.cpp \
     jlm/llvm/opt/ScalarEvolution.cpp \
     jlm/llvm/opt/StoreValueForwarding.cpp \
-    jlm/llvm/opt/unroll.cpp \
 
 libllvm_HEADERS = \
     jlm/llvm/DotWriter.hpp \
@@ -93,9 +92,7 @@ libllvm_HEADERS = \
     jlm/llvm/backend/IpGraphToLlvmConverter.hpp \
     jlm/llvm/backend/RvsdgToIpGraphConverter.hpp \
     \
-    jlm/llvm/opt/unroll.hpp \
     jlm/llvm/opt/DeadNodeElimination.hpp \
-    jlm/llvm/opt/inlining.hpp \
     jlm/llvm/opt/CommonNodeElimination.hpp \
     jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp \
     jlm/llvm/opt/alias-analyses/AliasAnalysisPrecisionEvaluator.hpp \
@@ -115,15 +112,17 @@ libllvm_HEADERS = \
     jlm/llvm/opt/alias-analyses/PointsToGraph.hpp \
     jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysis.hpp \
     jlm/llvm/opt/AggregateAllocaSplitting.hpp \
-    jlm/llvm/opt/pull.hpp \
+    jlm/llvm/opt/FunctionInlining.hpp \
     jlm/llvm/opt/IfConversion.hpp \
     jlm/llvm/opt/InvariantValueRedirection.hpp \
     jlm/llvm/opt/IOBarrierElimination.hpp \
     jlm/llvm/opt/LoadChainSeparation.hpp \
     jlm/llvm/opt/LoopStrengthReduction.hpp \
+    jlm/llvm/opt/LoopUnrolling.hpp \
     jlm/llvm/opt/LoopUnswitching.hpp \
     jlm/llvm/opt/NodeHoisting.hpp \
     jlm/llvm/opt/NodeReduction.hpp \
+    jlm/llvm/opt/NodeSinking.hpp \
     jlm/llvm/opt/PredicateCorrelation.hpp \
     jlm/llvm/opt/RvsdgTreePrinter.hpp \
     jlm/llvm/opt/ScalarEvolution.hpp \
@@ -131,6 +130,7 @@ libllvm_HEADERS = \
     jlm/llvm/frontend/LlvmModuleConversion.hpp \
     jlm/llvm/frontend/ControlFlowRestructuring.hpp \
     jlm/llvm/frontend/InterProceduralGraphConversion.hpp \
+    jlm/llvm/ir/BasicBlock.hpp \
     jlm/llvm/ir/ipgraph-module.hpp \
     jlm/llvm/ir/RvsdgModule.hpp \
     jlm/llvm/ir/Linkage.hpp \
@@ -142,12 +142,10 @@ libllvm_HEADERS = \
     jlm/llvm/ir/tac.hpp \
     jlm/llvm/ir/domtree.hpp \
     jlm/llvm/ir/ipgraph.hpp \
-    jlm/llvm/ir/cfg.hpp \
+    jlm/llvm/ir/ControlFlowGraph.hpp \
     jlm/llvm/ir/ssa.hpp \
     jlm/llvm/ir/TypeConverter.hpp \
     jlm/llvm/ir/variable.hpp \
-    jlm/llvm/ir/basic-block.hpp \
-    jlm/llvm/ir/print.hpp \
     jlm/llvm/ir/Trace.hpp \
     jlm/llvm/ir/types.hpp \
     jlm/llvm/ir/operators/AggregateOperations.hpp \
@@ -208,6 +206,7 @@ run-libllvm-tests_SOURCES = \
     jlm/llvm/ir/operators/GammaTests.cpp \
     jlm/llvm/ir/operators/GetElementPtrTests.cpp \
     jlm/llvm/ir/operators/IntegerOperationsTests.cpp \
+    jlm/llvm/ir/operators/IntegerValueRepresentationTests.cpp \
     jlm/llvm/ir/operators/IOBarrierTests.cpp \
     jlm/llvm/ir/operators/LambdaTests.cpp \
     jlm/llvm/ir/operators/LoadTests.cpp \
@@ -221,13 +220,7 @@ run-libllvm-tests_SOURCES = \
     jlm/llvm/ir/AnnotationTests.cpp \
     jlm/llvm/ir/AttributeSetTests.cpp \
     jlm/llvm/ir/CallSummaryTests.cpp \
-    jlm/llvm/ir/CfgNodeTests.cpp \
-    jlm/llvm/ir/CfgOrderingsTests.cpp \
-    jlm/llvm/ir/CfgPruneTests.cpp \
-    jlm/llvm/ir/CfgPurgeTests.cpp \
-    jlm/llvm/ir/CfgStructureTests.cpp \
-    jlm/llvm/ir/CfgTests.cpp \
-    jlm/llvm/ir/CfgValidityTests.cpp \
+    jlm/llvm/ir/ControlFlowGraphTests.cpp \
     jlm/llvm/ir/DomTreeTests.cpp \
     jlm/llvm/ir/SsaDestructionTests.cpp \
     jlm/llvm/ir/ThreeAddressCodeTests.cpp \
@@ -249,21 +242,21 @@ run-libllvm-tests_SOURCES = \
     jlm/llvm/opt/AggregateAllocaSplittingTests.cpp \
     jlm/llvm/opt/CommonNodeEliminationTests.cpp \
     jlm/llvm/opt/DeadNodeEliminationTests.cpp \
+    jlm/llvm/opt/FunctionInliningTests.cpp \
     jlm/llvm/opt/IfConversionTests.cpp \
-    jlm/llvm/opt/InliningTests.cpp \
     jlm/llvm/opt/InvariantValueRedirectionTests.cpp \
     jlm/llvm/opt/IOBarrierEliminationTests.cpp \
     jlm/llvm/opt/LoadChainSeparationTests.cpp \
     jlm/llvm/opt/LoopStrengthReductionTests.cpp \
+    jlm/llvm/opt/LoopUnrollingTests.cpp \
     jlm/llvm/opt/LoopUnswitchingTests.cpp \
     jlm/llvm/opt/NodeHoistingTests.cpp \
     jlm/llvm/opt/NodeReductionTests.cpp \
+    jlm/llvm/opt/NodeSinkingTests.cpp \
     jlm/llvm/opt/PredicateCorrelationTests.cpp \
-    jlm/llvm/opt/PullTests.cpp \
     jlm/llvm/opt/RvsdgTreePrinterTests.cpp \
     jlm/llvm/opt/ScalarEvolutionTests.cpp \
     jlm/llvm/opt/StoreValueForwardingTests.cpp \
-    jlm/llvm/opt/UnrollTests.cpp \
 
 run-libllvm-tests_LIBS = libllvm librvsdg libutil
 run-libllvm-tests_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)

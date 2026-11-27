@@ -4,7 +4,7 @@
  */
 
 #include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
-#include <jlm/llvm/ir/basic-block.hpp>
+#include <jlm/llvm/ir/BasicBlock.hpp>
 #include <jlm/llvm/ir/CallingConvention.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators/AggregateOperations.hpp>
@@ -169,10 +169,8 @@ IpGraphToLlvmConverter::CreateICmpInstruction(
 }
 
 static ::llvm::APInt
-convert_bitvalue_repr(const rvsdg::BitValueRepresentation & vr)
+convert_bitvalue_repr(const IntegerValueRepresentation & vr)
 {
-  JLM_ASSERT(vr.is_defined());
-
   std::string str = vr.str();
   std::reverse(str.begin(), str.end());
 
@@ -189,10 +187,7 @@ IpGraphToLlvmConverter::ConverterIntegerConstant(
       util::assertedCast<const IntegerConstantOperation>(&op)->Representation();
   const auto type = ::llvm::IntegerType::get(builder.getContext(), representation.nbits());
 
-  if (representation.is_defined())
-    return ::llvm::ConstantInt::get(type, convert_bitvalue_repr(representation));
-
-  return ::llvm::UndefValue::get(type);
+  return ::llvm::ConstantInt::get(type, convert_bitvalue_repr(representation));
 }
 
 ::llvm::Value *
@@ -350,22 +345,28 @@ IpGraphToLlvmConverter::convert_branch(
 }
 
 ::llvm::Value *
-IpGraphToLlvmConverter::convert_phi(
-    const rvsdg::SimpleOperation & op,
+IpGraphToLlvmConverter::convertSsaPhiOperation(
+    const SsaPhiOperation & phiOp,
     const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> & builder)
 {
-  auto & phi = *util::assertedCast<const SsaPhiOperation>(&op);
   auto & llvmContext = Context_->llvm_module().getContext();
   auto & typeConverter = Context_->GetTypeConverter();
+  auto phiType = phiOp.Type();
 
-  if (rvsdg::is<IOStateType>(phi.Type()))
+  if (rvsdg::is<IOStateType>(phiType))
     return nullptr;
-  if (rvsdg::is<MemoryStateType>(phi.Type()))
+  if (rvsdg::is<MemoryStateType>(phiType))
     return nullptr;
 
-  auto t = typeConverter.ConvertJlmType(*phi.Type(), llvmContext);
-  return builder.CreatePHI(t, op.narguments());
+  // Functions are represented as pointers in LLVM IR, so a phi over function
+  // values must be created as a phi over pointers. Creating it with the
+  // function's FunctionType would mismatch the types of the incoming values,
+  // which are the pointer-typed LLVM functions.
+  if (rvsdg::is<rvsdg::FunctionType>(phiType))
+    phiType = PointerType::Create();
+
+  return builder.CreatePHI(typeConverter.ConvertJlmType(*phiType, llvmContext), phiOp.narguments());
 }
 
 ::llvm::Value *
@@ -547,10 +548,10 @@ IpGraphToLlvmConverter::convert(
 
   if (auto ft = dynamic_cast<const FloatingPointType *>(&op.type()->element_type()))
   {
-    if (ft->size() == fpsize::half)
+    if (ft->size() == fpsize::half || ft->size() == fpsize::bfloat)
     {
       auto data = get_fpdata<uint16_t>(operands);
-      auto type = ::llvm::Type::getBFloatTy(builder.getContext());
+      auto type = Context_->GetTypeConverter().ConvertJlmType(*ft, builder.getContext());
       return ::llvm::ConstantDataArray::getFP(type, data);
     }
     else if (ft->size() == fpsize::flt)
@@ -803,10 +804,10 @@ IpGraphToLlvmConverter::convert_constantdatavector(
 
   if (auto ft = dynamic_cast<const FloatingPointType *>(&cop.type()))
   {
-    if (ft->size() == fpsize::half)
+    if (ft->size() == fpsize::half || ft->size() == fpsize::bfloat)
     {
       auto data = get_fpdata<uint16_t>(operands);
-      auto type = ::llvm::Type::getBFloatTy(builder.getContext());
+      auto type = Context_->GetTypeConverter().ConvertJlmType(*ft, builder.getContext());
       return ::llvm::ConstantDataVector::getFP(type, data);
     }
     else if (ft->size() == fpsize::flt)
@@ -1248,9 +1249,9 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_branch(op, arguments, builder);
   }
-  if (is<SsaPhiOperation>(op))
+  if (const auto ssaPhiOperation = dynamic_cast<const SsaPhiOperation *>(&op))
   {
-    return convert_phi(op, arguments, builder);
+    return convertSsaPhiOperation(*ssaPhiOperation, arguments, builder);
   }
   if (is<LoadNonVolatileOperation>(op))
   {
@@ -1319,6 +1320,10 @@ IpGraphToLlvmConverter::convert_operation(
   if (is<ControlToIntOperation>(op))
   {
     return convert_ctl2bits(op, arguments, builder);
+  }
+  if (is<BitToIntegerTypeOperation>(op) || is<IntegerToBitTypeOperation>(op))
+  {
+    return Context_->value(arguments[0]);
   }
   if (is<ConstantVectorOperation>(op))
   {
