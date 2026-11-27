@@ -138,6 +138,8 @@ public:
     size_t numLambdaExitMemoryStateMergeReductions = 0;
 
     size_t numMatchReductions = 0;
+    size_t numBitToIntegerTypeReductions = 0;
+    size_t numIntegerToBitTypeReductions = 0;
     size_t numSExtReductions = 0;
     size_t numZExtReductions = 0;
     size_t numTruncReductions = 0;
