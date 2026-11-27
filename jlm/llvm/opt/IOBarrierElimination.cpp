@@ -150,7 +150,7 @@ public:
     if (!inserted && sizeInBytes >= it->second)
       return false;
 
-    // Ensure the dervied size is no smaller than the marked size
+    // Ensure the derived size is no smaller than the marked size
     auto markedSize = markedDereferencable_.find(&output);
     if (markedSize != markedDereferencable_.end())
     {
@@ -167,7 +167,7 @@ public:
 
   /**
    * Used during the propagation phase.
-   * Get the dervied dereferencable size for the given \p output.
+   * Get the derived dereferencable size for the given \p output.
    * If no derived dereferenable size has been set, the marked size is used, or 0.
    * @param output the pointer value in question
    * @return the size in bytes that the output is believed to be dereferencable
