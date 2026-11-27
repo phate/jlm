@@ -24,7 +24,8 @@ LlvmDotWriter::AnnotateTypeGraphNode(const rvsdg::Type & type, util::graph::Node
 
   // Some types get special handling, such as adding incoming edges from aggregate types
   if (type.Kind() == rvsdg::TypeKind::State || rvsdg::is<rvsdg::BitType>(type)
-      || rvsdg::is<PointerType>(type) || rvsdg::is<FloatingPointType>(type)
+      || rvsdg::is<IntegerType>(type) || rvsdg::is<PointerType>(type)
+      || rvsdg::is<FloatingPointType>(type)
       || rvsdg::is<VariableArgumentType>(type) || rvsdg::is<rvsdg::UnitType>(type)
       || rvsdg::is<rvsdg::ControlType>(type))
   {
