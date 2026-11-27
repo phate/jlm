@@ -5,16 +5,16 @@
 
 #include <gtest/gtest.h>
 
-#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/NodeReduction.hpp>
+#include <jlm/rvsdg/bitstring/type.hpp>
+#include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/NodeNormalization.hpp>
 #include <jlm/rvsdg/SimpleNode.hpp>
 #include <jlm/rvsdg/TestType.hpp>
-#include <jlm/rvsdg/bitstring/type.hpp>
-#include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -56,11 +56,9 @@ TEST(ConversionOperationsTests, NormalizeInverseBitIntegerConversions)
   auto & integerArgument = GraphImport::Create(graph, integerType, "integer");
 
   auto & integerNode = BitToIntegerTypeOperation::createNode(bitArgument, integerType);
-  auto & bitResultNode =
-      IntegerToBitTypeOperation::createNode(*integerNode.output(0), bitType);
+  auto & bitResultNode = IntegerToBitTypeOperation::createNode(*integerNode.output(0), bitType);
   auto & bitNode = IntegerToBitTypeOperation::createNode(integerArgument, bitType);
-  auto & integerResultNode =
-      BitToIntegerTypeOperation::createNode(*bitNode.output(0), integerType);
+  auto & integerResultNode = BitToIntegerTypeOperation::createNode(*bitNode.output(0), integerType);
 
   GraphExport::Create(*bitResultNode.output(0), "bitsResult");
   GraphExport::Create(*integerResultNode.output(0), "integerResult");
