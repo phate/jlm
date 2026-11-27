@@ -388,6 +388,11 @@ public:
         operand.Type(),
         std::move(resultType));
   }
+
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeInverse(
+      const BitToIntegerTypeOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 // FIXME: Remove again once conversion from BitType to IntegerType is completed.
@@ -454,6 +459,11 @@ public:
         operand.Type(),
         std::move(resultType));
   }
+
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeInverse(
+      const IntegerToBitTypeOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
 };
 
 class PtrToIntOperation final : public rvsdg::UnaryOperation
