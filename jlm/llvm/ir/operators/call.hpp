@@ -13,7 +13,7 @@
 #include <jlm/llvm/ir/tac.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/Phi.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 
 namespace jlm::llvm
 {
@@ -350,6 +350,15 @@ public:
     return *ioState;
   }
 
+  [[nodiscard]] static rvsdg::Input &
+  mapIOStateOutputToInput(rvsdg::Output & output)
+  {
+    JLM_ASSERT(is<IOStateType>(output.Type()));
+    auto [callNode, callOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<CallOperation>(output);
+    JLM_ASSERT(callOperation);
+    return GetIOStateInput(*callNode);
+  }
+
   /**
    * @return The call node's memory state input.
    */
@@ -372,6 +381,15 @@ public:
     const auto memoryState = node.output(node.noutputs() - 1);
     JLM_ASSERT(is<MemoryStateType>(memoryState->Type()));
     return *memoryState;
+  }
+
+  [[nodiscard]] static rvsdg::Input &
+  mapMemoryStateOutputToInput(rvsdg::Output & output)
+  {
+    JLM_ASSERT(is<MemoryStateType>(output.Type()));
+    auto [callNode, callOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<CallOperation>(output);
+    JLM_ASSERT(callOperation);
+    return GetMemoryStateInput(*callNode);
   }
 
   /**

@@ -368,6 +368,9 @@ private:
   AnalyzeGep(const rvsdg::SimpleNode & node);
 
   void
+  AnalyzePtrMask(const rvsdg::SimpleNode & node);
+
+  void
   AnalyzeBitcast(const rvsdg::SimpleNode & node);
 
   void
@@ -395,6 +398,9 @@ private:
   AnalyzeMemset(const rvsdg::SimpleNode & node);
 
   void
+  AnalyzeMemmove(const rvsdg::SimpleNode & node);
+
+  void
   AnalyzeConstantArray(const rvsdg::SimpleNode & node);
 
   void
@@ -419,7 +425,7 @@ private:
   AnalyzeFunctionToPointer(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeIOBarrier(const rvsdg::SimpleNode & node);
+  AnalyzeMemoryHoistBarrier(const rvsdg::SimpleNode & node);
 
   void
   AnalyzeStructuralNode(const rvsdg::StructuralNode & node);

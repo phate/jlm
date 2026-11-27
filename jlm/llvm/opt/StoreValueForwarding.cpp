@@ -25,8 +25,8 @@
 #include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/RegionPredicateTrace.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
-#include <jlm/rvsdg/structural-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
+#include <jlm/rvsdg/StructuralNode.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/common.hpp>
@@ -56,6 +56,10 @@ static const bool ENABLE_REGION_PREDICATE_CHECK =
 // the previously loaded value, if the types match, and the addresses are the same (MustAlias).
 // When disabled, loads are skipped during tracing, and never considered for value forwarding.
 static const bool DISABLE_LOAD_LOAD_FORWARDING = std::getenv("JLM_DISABLE_LOAD_LOAD_FORWARDING");
+
+// Let tracing continue through calls, if the memory state encoding has marked
+// the traced memory state as being read-only inside the call.
+static const bool ENABLE_CALL_TRACETHROUGH = !std::getenv("JLM_DISABLE_CALL_TRACETHROUGH");
 
 /**
  * Helper for counting alias analysis responses
@@ -191,11 +195,17 @@ public:
 struct StoreValueForwarding::Context final
 {
   explicit Context(aa::AliasAnalysis & aliasAnalysis, Statistics & statistics) noexcept
-      : outputTracer(true),
+      : outputTracer(),
         aliasAnalysis(aliasAnalysis),
         statistics(statistics)
   {
-    outputTracer.setTraceThroughStructuralNodes(true);
+    // It is safe to do invariance caching.
+    //  - outputs that are invariant in a structural node are never changed inside the node.
+    //  - structural node inputs and outputs are never removed during the duration of this pass.
+    outputTracer.setInvarianceCaching(true);
+    outputTracer.setStructuralNodePolicy(
+        rvsdg::OutputTracer::StructuralNodePolicy::traceThroughIfDetectedInvariant);
+    outputTracer.setRegionPredicateCheckingEnabled(true);
     // If load/load forwarding is disabled, make the tracer skip loads
     outputTracer.setTraceThroughLoadedStates(DISABLE_LOAD_LOAD_FORWARDING);
   }
@@ -224,7 +234,7 @@ struct StoreValueForwarding::Context final
 
   OutputTracer outputTracer;
 
-  rvsdg::RegionPredicateTrace regionPredicateTrace;
+  rvsdg::RegionPredicateTracer regionPredicateTracer;
 
   // The AliasAnalysis instance used for all alias queries
   aa::AliasAnalysis & aliasAnalysis;
@@ -254,7 +264,7 @@ StoreValueForwarding::traverseInterProceduralRegion(rvsdg::Region & region)
           // Output tracing is only done intra-procedural in this pass, and we are about to process
           // a new lambda node. Clear the tracing cache to free up the memory from the last lambda
           // we processed.
-          context_->outputTracer.clearCache();
+          context_->outputTracer.clearInvarianceCache();
 
           traverseIntraProceduralRegion(*lambdaNode.subregion());
         },
@@ -412,14 +422,14 @@ public:
       rvsdg::SimpleNode & loadNode,
       OutputTracer & tracer,
       aa::AliasAnalysis & aliasAnalysis,
-      rvsdg::RegionPredicateTrace & regionPredicateTrace)
+      rvsdg::RegionPredicateTracer & regionPredicateTracer)
       : loadNode(loadNode),
         tracer(tracer),
         aliasAnalysis(aliasAnalysis),
-        regionPredicateTrace(regionPredicateTrace)
+        regionPredicateTracer(regionPredicateTracer)
   {
     JLM_ASSERT(is<LoadNonVolatileOperation>(&loadNode));
-    loadedAddress = &llvm::traceOutput(*LoadOperation::AddressInput(loadNode).origin());
+    loadedAddress = &llvm::traceOutput(*LoadOperation::AddressInput(loadNode).origin(), false);
     loadedType = LoadOperation::LoadedValueOutput(loadNode).Type();
     loadedTypeSize = GetTypeStoreSize(*loadedType);
   }
@@ -537,7 +547,7 @@ private:
     const auto storedSize = GetTypeStoreSize(*storeType);
 
     // Trace the store address now, to avoid duplicate work when multiple alias analyses are used
-    const auto & tracedStoredAddress = llvm::traceOutput(storeAddress);
+    const auto & tracedStoredAddress = llvm::traceOutput(storeAddress, false);
 
     // Query the alias analysis
     const auto response =
@@ -562,7 +572,7 @@ private:
     const auto otherLoadSize = GetTypeStoreSize(*otherLoadType);
 
     // Trace the store address now, to avoid duplicate work when multiple alias analyses are used
-    const auto & tracedOtherLoadAddress = llvm::traceOutput(otherLoadAddress);
+    const auto & tracedOtherLoadAddress = llvm::traceOutput(otherLoadAddress, false);
 
     // Query the alias analysis
     const auto response =
@@ -771,6 +781,37 @@ private:
       return ValueOrigin::createUninitialized();
     }
 
+    if (auto [callExitSplitNode, callExitSplitOp] =
+            rvsdg::TryGetSimpleNodeAndOptionalOp<CallExitMemoryStateSplitOperation>(tracedOutput);
+        callExitSplitOp)
+    {
+      // If call tracethrough is not enabled, give up now
+      if (!ENABLE_CALL_TRACETHROUGH)
+        return ValueOrigin::createUnknown();
+
+      // If the call may clobber the memory, value forwarding is not possible
+      if (CallExitMemoryStateSplitOperation::mayCallModifyMemoryOfOutput(tracedOutput))
+        return ValueOrigin::createUnknown();
+
+      // Otherwise, try finding the corresponding memory state input and continue tracing
+      auto memoryNodeId = CallExitMemoryStateSplitOperation::mapOutputToMemoryNodeId(tracedOutput);
+      auto & callNodeOutput = *callExitSplitNode->input(0)->origin();
+      auto [callNode, callOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<CallOperation>(callNodeOutput);
+      if (!callOp)
+        return ValueOrigin::createUnknown();
+      auto callEntryMerge = CallOperation::tryGetMemoryStateEntryMerge(*callNode);
+      if (!callEntryMerge)
+        return ValueOrigin::createUnknown();
+      auto memoryStateInput = CallEntryMemoryStateMergeOperation::tryMapMemoryNodeIdToInput(
+          *callEntryMerge,
+          memoryNodeId);
+      if (!memoryStateInput)
+        return ValueOrigin::createUnknown();
+
+      // Memory state input found, continue tracing
+      return getLastValueOriginBeforeInput(*memoryStateInput, loopBackEdgeTaken);
+    }
+
     // If we found an exit variable of a gamma node, trace each of its subregions
     if (auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(tracedOutput))
     {
@@ -800,13 +841,14 @@ private:
           // If region predication checks has been disabled, loopBackEdgeTaken is always true
           JLM_ASSERT(ENABLE_REGION_PREDICATE_CHECK);
 
-          auto & fromRegion = *branchResult->region();
-          if (!regionPredicateTrace.CheckPredicatesSatisfiable(fromRegion, *loadNode.region()))
+          auto & valueOriginRegion = *branchResult->region();
+          auto & targetRegion = *loadNode.region();
+          if (!regionPredicateTracer.isReachableFromRegion(targetRegion, valueOriginRegion))
           {
             // Mark the region as providing uninitialized memory, since it is never reached
             auto valueOrigin = ValueOrigin::createUninitialized();
             lastValueOriginInRegion.emplace(
-                std::make_pair(&fromRegion, loopBackEdgeTaken),
+                std::make_pair(&valueOriginRegion, loopBackEdgeTaken),
                 valueOrigin);
             addObservedValueOrigin(valueOrigin);
             continue;
@@ -907,7 +949,7 @@ private:
       return ValueOrigin::createThetaNodePre(*thetaNode);
     }
 
-    // Tracing reached something that is not handled, such as a function call
+    // Tracing reached something that is not handled
     return ValueOrigin::createUnknown();
   }
 
@@ -926,7 +968,7 @@ private:
 
   OutputTracer & tracer;
   aa::AliasAnalysis & aliasAnalysis;
-  rvsdg::RegionPredicateTrace & regionPredicateTrace;
+  rvsdg::RegionPredicateTracer & regionPredicateTracer;
 
   // Map containing info about each store node relevant to value forwarding.
   std::unordered_map<rvsdg::SimpleNode *, StoreNodeInfo> storeNodeInfo;
@@ -1007,7 +1049,7 @@ StoreValueForwarding::processLoadWithMemoryStates(rvsdg::SimpleNode & loadNode)
       loadNode,
       context_->outputTracer,
       context_->aliasAnalysis,
-      context_->regionPredicateTrace);
+      context_->regionPredicateTracer);
   const auto shouldForwardValueOrigins = loadTracingInfo.traceAllMemoryStateInputs();
   context_->statistics.stopTracing();
 
@@ -1060,41 +1102,247 @@ StoreValueForwarding::traceLoadWithoutMemoryStates(const rvsdg::SimpleNode & loa
     return std::nullopt;
   }
 
+  if (!deltaNode->region()->IsRootRegion())
+  {
+    // FIXME: Let's ignore delta nodes that are not defined in the root region for now.
+    return std::nullopt;
+  }
+
   context_->numLoadsTracedToDeltaNode++;
   return std::optional<TracedDelta>({ deltaNode, gepConstantsOpt.value() });
 }
 
-static size_t
-getConstantDataArrayElementIndex(
-    const ConstantDataArrayOperation & constantDataArray,
-    const std::vector<GetElementPtrOperation::Constant> & gepConstants)
+namespace
 {
-  if (gepConstants.empty())
-    return 0;
 
-  JLM_ASSERT(gepConstants.size() == 1);
-  auto & gepConstant = gepConstants[0];
-  JLM_ASSERT(gepConstant.indices.size() == 1 || gepConstant.indices.size() == 2);
+struct RegionSlice
+{
+  // Nodes are ordered according to their depth. Highest depth first.
+  std::vector<rvsdg::Node *> nodes;
+  util::HashSet<rvsdg::Output *> arguments;
+};
 
-  if (gepConstant.indices.size() == 1)
+}
+
+static RegionSlice
+computeRegionSlice(rvsdg::Output & output)
+{
+  // FIXME: This code works perfectly to visit the nodes of a tree, but does not work if it is a DAG
+  // as it would not guarantee that the nodes would be ordered according to their depth.
+  std::function<void(rvsdg::Output &, RegionSlice &, util::HashSet<rvsdg::Node *> &)> compute =
+      [&compute](
+          rvsdg::Output & output,
+          RegionSlice & regionSlice,
+          util::HashSet<rvsdg::Node *> & visited)
   {
-    if (const auto gepConstantIndex = gepConstant.indices[0]; gepConstantIndex == 0)
-      return 0;
+    if (rvsdg::TryGetOwnerRegion(output))
+    {
+      regionSlice.arguments.insert(&output);
+      return;
+    }
 
-    JLM_ASSERT(gepConstant.pointeeType == rvsdg::BitType::Create(8));
-    const auto offsetInBytes = gepConstant.getOffsetInBytes();
-    const auto elementSize = GetTypeAllocSize(constantDataArray.type()->element_type());
-    JLM_ASSERT(offsetInBytes % elementSize == 0);
-    return offsetInBytes / elementSize;
+    auto & node = rvsdg::AssertGetOwnerNode<rvsdg::Node>(output);
+    if (visited.Contains(&node))
+      return;
+
+    regionSlice.nodes.push_back(&node);
+    for (auto & input : node.Inputs())
+    {
+      compute(*input.origin(), regionSlice, visited);
+    }
+  };
+
+  RegionSlice regionSlice;
+  util::HashSet<rvsdg::Node *> visited;
+  compute(output, regionSlice, visited);
+
+  return regionSlice;
+}
+
+static void
+copyRegionSlice(
+    rvsdg::Region & targetRegion,
+    const RegionSlice & regionSlice,
+    rvsdg::SubstitutionMap & substitutionMap)
+{
+  for (auto it = regionSlice.nodes.rbegin(); it != regionSlice.nodes.rend(); ++it)
+  {
+    auto node = *it;
+    node->copy(&targetRegion, substitutionMap);
+  }
+}
+
+static rvsdg::Output &
+copyDeltaRegionSlice(rvsdg::Output & output, rvsdg::Region & targetRegion)
+{
+  auto deltaNode = util::assertedCast<rvsdg::DeltaNode>(output.region()->node());
+
+  auto regionSlice = computeRegionSlice(output);
+
+  rvsdg::SubstitutionMap substitutionMap;
+  for (auto oldArgument : regionSlice.arguments.Items())
+  {
+    auto ctxVar = deltaNode->MapBinderContextVar(*oldArgument);
+    auto & newArgument = rvsdg::RouteToRegion(*ctxVar.input->origin(), targetRegion);
+    substitutionMap.insert(oldArgument, &newArgument);
   }
 
-  if (gepConstant.indices.size() == 2)
+  copyRegionSlice(targetRegion, regionSlice, substitutionMap);
+  return substitutionMap.lookup(output);
+}
+
+static rvsdg::Output &
+copyDeltaElement(
+    const uint64_t elementOffsetInBytes,
+    rvsdg::Output & output,
+    rvsdg::Region & targetRegion,
+    const std::shared_ptr<const rvsdg::Type> & loadedType)
+{
+  if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
   {
-    JLM_ASSERT(gepConstant.indices[0] == 0);
-    return gepConstant.indices.back();
+    return rvsdg::MatchTypeWithDefault(
+        node->GetOperation(),
+        [&](const IntegerConstantOperation &) -> rvsdg::Output &
+        {
+          JLM_ASSERT(elementOffsetInBytes == 0);
+          auto copiedOutput = &copyDeltaRegionSlice(output, targetRegion);
+
+          const auto loadBitType = util::assertedCast<const rvsdg::BitType>(loadedType.get());
+          const auto copiedBitType =
+              util::assertedCast<const rvsdg::BitType>(copiedOutput->Type().get());
+          if (copiedBitType->nbits() == loadBitType->nbits())
+          {
+            return *copiedOutput;
+          }
+
+          if (loadBitType->nbits() < copiedBitType->nbits())
+          {
+            return *TruncOperation::createNode(*copiedOutput, loadedType).output(0);
+          }
+
+          // FIXME: In this case, we would need to concat multiple integers.
+          return *copiedOutput;
+        },
+        [&](const ConstantFP &) -> rvsdg::Output &
+        {
+          JLM_ASSERT(elementOffsetInBytes == 0);
+          return copyDeltaRegionSlice(output, targetRegion);
+        },
+        [&](const ConstantPointerNullOperation &) -> rvsdg::Output &
+        {
+          JLM_ASSERT(elementOffsetInBytes == 0);
+          return copyDeltaRegionSlice(output, targetRegion);
+        },
+        [&](const FunctionToPointerOperation &) -> rvsdg::Output &
+        {
+          JLM_ASSERT(elementOffsetInBytes == 0);
+          return copyDeltaRegionSlice(output, targetRegion);
+        },
+        [&](const IntToPtrOperation &) -> rvsdg::Output &
+        {
+          JLM_ASSERT(elementOffsetInBytes == 0);
+          return copyDeltaRegionSlice(output, targetRegion);
+        },
+        [&](const GetElementPtrOperation &) -> rvsdg::Output &
+        {
+          JLM_ASSERT(elementOffsetInBytes == 0);
+          return copyDeltaRegionSlice(output, targetRegion);
+        },
+        [&](const ConstantAggregateZeroOperation &) -> rvsdg::Output &
+        {
+          if (is<PointerType>(loadedType))
+          {
+            return *ConstantPointerNullOperation::createNode(targetRegion).output(0);
+          }
+
+          if (const auto bitType = std::dynamic_pointer_cast<const rvsdg::BitType>(loadedType))
+          {
+            return *IntegerConstantOperation::Create(targetRegion, bitType->nbits(), 0).output(0);
+          }
+
+          if (const auto floatType = std::dynamic_pointer_cast<const FloatingPointType>(loadedType))
+          {
+            const auto zero = ConstantFP::getZeroRepresentation(floatType->size());
+            return *ConstantFP::createNode(targetRegion, floatType->size(), zero).output(0);
+          }
+
+          if (const auto vectorType = std::dynamic_pointer_cast<const FixedVectorType>(loadedType))
+          {
+            return *ConstantAggregateZeroOperation::createNode(targetRegion, vectorType).output(0);
+          }
+
+          throw std::logic_error("Unsupported load type");
+        },
+        [&](const ConstantArrayOperation & constantArrayOperation) -> rvsdg::Output &
+        {
+          const auto arrayType = constantArrayOperation.type();
+          const auto elementSizeInBytes = GetTypeAllocSize(*arrayType->GetElementType());
+
+          const auto index = elementOffsetInBytes / elementSizeInBytes;
+          return copyDeltaElement(
+              elementOffsetInBytes - (elementSizeInBytes * index),
+              *node->input(index)->origin(),
+              targetRegion,
+              loadedType);
+        },
+        [&](const ConstantDataArrayOperation & constantDataArrayOperation) -> rvsdg::Output &
+        {
+          const auto arrayType = constantDataArrayOperation.type();
+          const auto elementSizeInBytes = GetTypeAllocSize(*arrayType->GetElementType());
+
+          const auto index = elementOffsetInBytes / elementSizeInBytes;
+          return copyDeltaElement(
+              elementOffsetInBytes - (elementSizeInBytes * index),
+              *node->input(index)->origin(),
+              targetRegion,
+              loadedType);
+        },
+        [&](const ConstantStructOperation & constantStruct) -> rvsdg::Output &
+        {
+          auto & structType = constantStruct.type();
+
+          for (size_t n = 0; n < structType.numElements(); ++n)
+          {
+            auto fieldOffsetInBytes = structType.GetFieldOffset(n);
+
+            if (fieldOffsetInBytes == elementOffsetInBytes)
+            {
+              return copyDeltaElement(0, *node->input(n)->origin(), targetRegion, loadedType);
+            }
+
+            if (fieldOffsetInBytes > elementOffsetInBytes)
+            {
+              fieldOffsetInBytes = structType.GetFieldOffset(n - 1);
+              return copyDeltaElement(
+                  elementOffsetInBytes - fieldOffsetInBytes,
+                  *node->input(n - 1)->origin(),
+                  targetRegion,
+                  loadedType);
+            }
+          }
+
+          const auto lastElementIndex = structType.numElements() - 1;
+          const auto fieldOffsetInBytes = structType.GetFieldOffset(lastElementIndex);
+          JLM_ASSERT(fieldOffsetInBytes <= elementOffsetInBytes);
+          return copyDeltaElement(
+              elementOffsetInBytes - fieldOffsetInBytes,
+              *node->input(lastElementIndex)->origin(),
+              targetRegion,
+              loadedType);
+        },
+        [&]() -> rvsdg::Output &
+        {
+          throw std::logic_error("Unsupported operation: " + node->DebugString());
+        });
   }
 
-  throw std::logic_error("Unhandled number of GEP constant indices.");
+  if (rvsdg::TryGetRegionParentNode<rvsdg::DeltaNode>(output))
+  {
+    JLM_ASSERT(elementOffsetInBytes == 0);
+    return copyDeltaRegionSlice(output, targetRegion);
+  }
+
+  throw std::logic_error("Unsupported output owner");
 }
 
 void
@@ -1106,154 +1354,31 @@ StoreValueForwarding::forwardLoadWithoutMemoryStates(
   JLM_ASSERT(LoadOperation::numMemoryStates(loadNode) == 0);
   const auto loadOperation =
       dynamic_cast<const LoadNonVolatileOperation *>(&loadNode.GetOperation());
-  const auto & deltaResultOrigin = *tracedDelta.deltaNode->result().origin();
+  auto & deltaResultOrigin = *tracedDelta.deltaNode->result().origin();
 
-  if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(deltaResultOrigin))
+  if (tracedDelta.gepConstants.size() > 1)
   {
-    rvsdg::MatchTypeWithDefault(
-        node->GetOperation(),
-        [&](const IntegerConstantOperation &)
-        {
-          JLM_ASSERT(tracedDelta.gepConstants.empty());
-
-          auto copiedNode = node->copy(loadNode.region(), {});
-          if (*loadOperation->GetLoadedType() != *node->output(0)->Type())
-          {
-            copiedNode =
-                &TruncOperation::createNode(*copiedNode->output(0), loadOperation->GetLoadedType());
-          }
-          LoadOperation::LoadedValueOutput(loadNode).divert_users(copiedNode->output(0));
-
-          context_->numForwardedLoadsWithoutMemoryState++;
-        },
-        [&](const ConstantFP &)
-        {
-          JLM_ASSERT(tracedDelta.gepConstants.empty());
-          auto copiedNode = node->copy(loadNode.region(), {});
-          LoadOperation::LoadedValueOutput(loadNode).divert_users(copiedNode->output(0));
-          context_->numForwardedLoadsWithoutMemoryState++;
-        },
-        [&](const GetElementPtrOperation &)
-        {
-          // FIXME: handle operation
-        },
-        [&](const ConstantStructOperation &)
-        {
-          // FIXME: handle operation
-        },
-        [&](const ConstantDataArrayOperation & constantDataArray)
-        {
-          const auto elementIndex =
-              getConstantDataArrayElementIndex(constantDataArray, tracedDelta.gepConstants);
-
-          if (constantDataArray.type()->element_type() == *loadOperation->GetLoadedType())
-          {
-            const auto elementNode =
-                rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*node->input(elementIndex)->origin());
-            auto copiedNode = elementNode->copy(loadNode.region(), {});
-            LoadOperation::LoadedValueOutput(loadNode).divert_users(copiedNode->output(0));
-          }
-          else
-          {
-            [[maybe_unused]] auto cdaBitType =
-                dynamic_cast<const rvsdg::BitType *>(&constantDataArray.type()->element_type());
-            [[maybe_unused]] auto loadBitType =
-                dynamic_cast<const rvsdg::BitType *>(loadOperation->GetLoadedType().get());
-            JLM_ASSERT(cdaBitType && loadBitType);
-            JLM_ASSERT(cdaBitType->nbits() < loadBitType->nbits());
-            JLM_ASSERT(loadBitType->nbits() % cdaBitType->nbits() == 0);
-            const auto numRequiredConstants = loadBitType->nbits() / cdaBitType->nbits();
-            JLM_ASSERT(numRequiredConstants > 1);
-
-            std::vector<rvsdg::BitValueRepresentation> constants;
-            constants.reserve(numRequiredConstants);
-            for (size_t n = elementIndex; n < elementIndex + numRequiredConstants; n++)
-            {
-              const auto elementNode =
-                  rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*node->input(n)->origin());
-              const auto constantOp =
-                  util::assertedCast<const IntegerConstantOperation>(&elementNode->GetOperation());
-              constants.push_back(constantOp->Representation());
-            }
-            JLM_ASSERT(constants.size() == numRequiredConstants);
-            // FIXME: take care of endianness
-            auto & constantNode = IntegerConstantOperation::Create(
-                *loadNode.region(),
-                rvsdg::BitValueRepresentation::create(constants));
-            LoadOperation::LoadedValueOutput(loadNode).divert_users(constantNode.output(0));
-          }
-          context_->numForwardedLoadsWithoutMemoryState++;
-        },
-        [&](const ConstantArrayOperation &)
-        {
-          // FIXME: handle operation
-        },
-        [&](const ConstantAggregateZeroOperation &)
-        {
-          const auto loadedType = loadOperation->GetLoadedType();
-          if (is<PointerType>(loadedType))
-          {
-            const auto & nullPtrNode = ConstantPointerNullOperation::createNode(*loadNode.region());
-            LoadOperation::LoadedValueOutput(loadNode).divert_users(nullPtrNode.output(0));
-          }
-          else if (const auto bitType = std::dynamic_pointer_cast<const rvsdg::BitType>(loadedType))
-          {
-            const auto & zeroNode =
-                IntegerConstantOperation::Create(*loadNode.region(), bitType->nbits(), 0);
-            LoadOperation::LoadedValueOutput(loadNode).divert_users(zeroNode.output(0));
-          }
-          else if (
-              const auto floatType =
-                  std::dynamic_pointer_cast<const llvm::FloatingPointType>(loadedType))
-          {
-            const auto zero = ConstantFP::getZeroRepresentation(floatType->size());
-            const auto & zeroNode =
-                ConstantFP::createNode(*loadNode.region(), floatType->size(), zero);
-            LoadOperation::LoadedValueOutput(loadNode).divert_users(zeroNode.output(0));
-          }
-          else if (
-              const auto vectorType = std::dynamic_pointer_cast<const FixedVectorType>(loadedType))
-          {
-            auto & zeroNode =
-                ConstantAggregateZeroOperation::createNode(*loadNode.region(), vectorType);
-            LoadOperation::LoadedValueOutput(loadNode).divert_users(zeroNode.output(0));
-          }
-          else
-          {
-            throw std::logic_error("Unsupported load type");
-          }
-
-          context_->numForwardedLoadsWithoutMemoryState++;
-        },
-        [&](const ConstantPointerNullOperation &)
-        {
-          JLM_ASSERT(tracedDelta.gepConstants.empty());
-          const auto & nullPtrNode = ConstantPointerNullOperation::createNode(*loadNode.region());
-          LoadOperation::LoadedValueOutput(loadNode).divert_users(nullPtrNode.output(0));
-          context_->numForwardedLoadsWithoutMemoryState++;
-        },
-        [&](const IntToPtrOperation &)
-        {
-          // FIXME: handle operation
-        },
-        [&]()
-        {
-          throw std::logic_error("Unsupported operation: " + node->DebugString());
-        });
+    // FIXME:
+    return;
   }
-  else if (
-      const auto deltaNode = rvsdg::TryGetRegionParentNode<rvsdg::DeltaNode>(deltaResultOrigin))
+
+  JLM_ASSERT(tracedDelta.gepConstants.size() <= 1);
+  const uint64_t offsetInBytes =
+      tracedDelta.gepConstants.empty() ? 0 : tracedDelta.gepConstants.front().getOffsetInBytes();
+  auto & newOutput = copyDeltaElement(
+      offsetInBytes,
+      deltaResultOrigin,
+      *loadNode.region(),
+      loadOperation->GetLoadedType());
+
+  if (*loadOperation->GetLoadedType() != *newOutput.Type())
   {
-    auto [ctxInput, _] = deltaNode->MapBinderContextVar(deltaResultOrigin);
-    JLM_ASSERT(ctxInput->region()->IsRootRegion());
-    auto & routedValue = rvsdg::RouteToRegion(*ctxInput->origin(), *loadNode.region());
-    LoadOperation::LoadedValueOutput(loadNode).divert_users(&routedValue);
-    context_->numForwardedLoadsWithoutMemoryState++;
+    // FIXME:
+    return;
   }
-  else
-  {
-    throw std::logic_error("Unsupported output owner");
-  }
+
+  LoadOperation::LoadedValueOutput(loadNode).divert_users(&newOutput);
+  context_->numForwardedLoadsWithoutMemoryState++;
 }
 
 // Performs StoreValueForwarding to the load node represented by the tracingInfo.

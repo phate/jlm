@@ -65,6 +65,7 @@ class InsertValueOperation;
 class InterProceduralGraphModule;
 class LambdaExitMemoryStateMergeOperation;
 class PointerToFunctionOperation;
+class SsaPhiOperation;
 class ThreeAddressCode;
 class Variable;
 
@@ -464,8 +465,8 @@ private:
       ::llvm::IRBuilder<> & builder);
 
   ::llvm::Value *
-  convert_phi(
-      const rvsdg::SimpleOperation & op,
+  convertSsaPhiOperation(
+      const SsaPhiOperation & phiOp,
       const std::vector<const Variable *> &,
       ::llvm::IRBuilder<> & builder);
 

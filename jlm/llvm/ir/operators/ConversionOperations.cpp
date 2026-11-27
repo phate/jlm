@@ -5,6 +5,7 @@
 
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/util/common.hpp>
 
@@ -66,7 +67,7 @@ SExtOperation::foldConstant(
   JLM_ASSERT(operands.size() == 1);
   auto & operand = *operands[0];
 
-  const auto & tracedOperand = llvm::traceOutput(operand);
+  const auto & tracedOperand = llvm::traceOutput(operand, true);
   auto [constantNode, constantOperation] =
       rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(tracedOperand);
   if (!constantOperation)
@@ -109,7 +110,7 @@ ZExtOperation::foldConstant(
   JLM_ASSERT(operands.size() == 1);
   auto & operand = *operands[0];
 
-  const auto & tracedOperand = llvm::traceOutput(operand);
+  const auto & tracedOperand = llvm::traceOutput(operand, true);
   auto [constantNode, constantOperation] =
       rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(tracedOperand);
   if (!constantOperation)
@@ -152,7 +153,7 @@ TruncOperation::foldConstant(
   JLM_ASSERT(operands.size() == 1);
   auto & operand = *operands[0];
 
-  const auto & tracedOperand = llvm::traceOutput(operand);
+  const auto & tracedOperand = llvm::traceOutput(operand, true);
   auto [constantNode, constantOperation] =
       rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(tracedOperand);
   if (!constantOperation)
@@ -164,6 +165,78 @@ TruncOperation::foldConstant(
   auto result = IntegerConstantOperation::Create(*operand.region(), resultRepresentation).output(0);
 
   return std::vector<rvsdg::Output *>({ result });
+}
+
+BitToIntegerTypeOperation::~BitToIntegerTypeOperation() noexcept = default;
+
+bool
+BitToIntegerTypeOperation::operator==(const Operation & other) const noexcept
+{
+  const auto op = dynamic_cast<const BitToIntegerTypeOperation *>(&other);
+  return op && op->argument(0) == argument(0) && op->result(0) == result(0);
+}
+
+std::string
+BitToIntegerTypeOperation::debug_string() const
+{
+  return util::strfmt("BitToInt", getBitType()->nbits());
+}
+
+std::unique_ptr<rvsdg::Operation>
+BitToIntegerTypeOperation::copy() const
+{
+  return std::make_unique<BitToIntegerTypeOperation>(*this);
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+BitToIntegerTypeOperation::normalizeInverse(
+    const BitToIntegerTypeOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 1);
+
+  auto [node, operation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerToBitTypeOperation>(*operands[0]);
+  if (!operation)
+    return std::nullopt;
+
+  return std::vector({ node->input(0)->origin() });
+}
+
+IntegerToBitTypeOperation::~IntegerToBitTypeOperation() noexcept = default;
+
+bool
+IntegerToBitTypeOperation::operator==(const Operation & other) const noexcept
+{
+  const auto op = dynamic_cast<const IntegerToBitTypeOperation *>(&other);
+  return op && op->argument(0) == argument(0) && op->result(0) == result(0);
+}
+
+std::string
+IntegerToBitTypeOperation::debug_string() const
+{
+  return util::strfmt("IntToBit", getIntegerType()->numBits());
+}
+
+std::unique_ptr<rvsdg::Operation>
+IntegerToBitTypeOperation::copy() const
+{
+  return std::make_unique<IntegerToBitTypeOperation>(*this);
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+IntegerToBitTypeOperation::normalizeInverse(
+    const IntegerToBitTypeOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 1);
+
+  auto [node, operation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<BitToIntegerTypeOperation>(*operands[0]);
+  if (!operation)
+    return std::nullopt;
+
+  return std::vector({ node->input(0)->origin() });
 }
 
 PtrToIntOperation::~PtrToIntOperation() noexcept = default;
@@ -208,6 +281,55 @@ FPExtOperation::copy() const
   return std::make_unique<FPExtOperation>(*this);
 }
 
+static const ::llvm::fltSemantics &
+mapToLlvmFltSemantics(const fpsize size)
+{
+  switch (size)
+  {
+  case fpsize::half:
+    return ::llvm::APFloat::IEEEhalf();
+  case fpsize::bfloat:
+    return ::llvm::APFloat::BFloat();
+  case fpsize::flt:
+    return ::llvm::APFloat::IEEEsingle();
+  case fpsize::dbl:
+    return ::llvm::APFloat::IEEEdouble();
+  case fpsize::x86fp80:
+    return ::llvm::APFloat::x87DoubleExtended();
+  case fpsize::fp128:
+    return ::llvm::APFloat::IEEEquad();
+  default:
+    JLM_UNREACHABLE("Unknown float size");
+  }
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+FPExtOperation::foldConstant(
+    const FPExtOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 1);
+  auto & operand = *operands[0];
+
+  const auto & tracedOperand = llvm::traceOutput(operand, true);
+  auto [constantNode, constantOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<ConstantFP>(tracedOperand);
+  if (!constantOperation)
+    return std::nullopt;
+
+  bool ignored = false;
+  ::llvm::APFloat resultRepresentation = constantOperation->constant();
+  resultRepresentation.convert(
+      mapToLlvmFltSemantics(operation.dstsize()),
+      ::llvm::APFloat::rmNearestTiesToEven,
+      &ignored);
+
+  auto & resultNode =
+      ConstantFP::createNode(*operand.region(), operation.dstsize(), resultRepresentation);
+
+  return std::vector<rvsdg::Output *>({ resultNode.output(0) });
+}
+
 FPTruncOperation::~FPTruncOperation() noexcept = default;
 
 bool
@@ -227,6 +349,33 @@ std::unique_ptr<rvsdg::Operation>
 FPTruncOperation::copy() const
 {
   return std::make_unique<FPTruncOperation>(*this);
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+FPTruncOperation::foldConstant(
+    const FPTruncOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 1);
+  auto & operand = *operands[0];
+
+  const auto & tracedOperand = llvm::traceOutput(operand, true);
+  auto [constantNode, constantOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<ConstantFP>(tracedOperand);
+  if (!constantOperation)
+    return std::nullopt;
+
+  bool ignored = false;
+  ::llvm::APFloat resultRepresentation = constantOperation->constant();
+  resultRepresentation.convert(
+      mapToLlvmFltSemantics(operation.dstsize()),
+      ::llvm::APFloat::rmNearestTiesToEven,
+      &ignored);
+
+  auto & resultNode =
+      ConstantFP::createNode(*operand.region(), operation.dstsize(), resultRepresentation);
+
+  return std::vector<rvsdg::Output *>({ resultNode.output(0) });
 }
 
 UIToFPOperation::~UIToFPOperation() noexcept = default;

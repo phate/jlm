@@ -15,6 +15,7 @@
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp>
+#include <jlm/llvm/ir/operators/StdLibIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
 #include <jlm/mlir/MLIRConverterCommon.hpp>
@@ -664,11 +665,71 @@ MlirToJlmConverter::ConvertOperation(
         llvm::FloatingPointType::Create(size)));
   }
 
+  else if (auto truncOp = ::mlir::dyn_cast<::mlir::arith::TruncFOp>(&mlirOperation))
+  {
+    auto type = truncOp.getResult().getType();
+    auto floatType = ::mlir::cast<::mlir::FloatType>(type);
+
+    llvm::fpsize size = ConvertFPSize(floatType.getWidth());
+    return rvsdg::outputs(&rvsdg::CreateOpNode<llvm::FPTruncOperation>(
+        { inputs[0] },
+        inputs[0]->Type(),
+        llvm::FloatingPointType::Create(size)));
+  }
+
+  else if (auto fpToSIOp = ::mlir::dyn_cast<::mlir::arith::FPToSIOp>(&mlirOperation))
+  {
+    auto type = fpToSIOp.getResult().getType();
+    auto intType = ::mlir::cast<::mlir::IntegerType>(type);
+    return rvsdg::outputs(&rvsdg::CreateOpNode<llvm::FPToSIOperation>(
+        { inputs[0] },
+        inputs[0]->Type(),
+        rvsdg::BitType::Create(intType.getIntOrFloatBitWidth())));
+  }
+
+  else if (auto fpToUIOp = ::mlir::dyn_cast<::mlir::arith::FPToUIOp>(&mlirOperation))
+  {
+    auto type = fpToUIOp.getResult().getType();
+    auto intType = ::mlir::cast<::mlir::IntegerType>(type);
+    return rvsdg::outputs(&rvsdg::CreateOpNode<llvm::FPToUIOperation>(
+        { inputs[0] },
+        inputs[0]->Type(),
+        rvsdg::BitType::Create(intType.getIntOrFloatBitWidth())));
+  }
+
+  else if (auto uiToFPOp = ::mlir::dyn_cast<::mlir::arith::UIToFPOp>(&mlirOperation))
+  {
+    auto type = uiToFPOp.getResult().getType();
+    auto floatType = ::mlir::cast<::mlir::FloatType>(type);
+
+    llvm::fpsize size = ConvertFPSize(floatType.getWidth());
+    return rvsdg::outputs(&rvsdg::CreateOpNode<llvm::UIToFPOperation>(
+        { inputs[0] },
+        inputs[0]->Type(),
+        llvm::FloatingPointType::Create(size)));
+  }
+
   else if (auto truncOp = ::mlir::dyn_cast<::mlir::arith::TruncIOp>(&mlirOperation))
   {
     auto type = truncOp.getResult().getType();
     auto intType = ::mlir::cast<::mlir::IntegerType>(type);
     return { &llvm::TruncOperation::create(intType.getIntOrFloatBitWidth(), *inputs[0]) };
+  }
+  else if (auto inttoptrOp = ::mlir::dyn_cast<::mlir::LLVM::IntToPtrOp>(&mlirOperation))
+  {
+    return { llvm::IntToPtrOperation::create(inputs[0]) };
+  }
+  else if (auto ptrToIntOp = ::mlir::dyn_cast<::mlir::LLVM::PtrToIntOp>(&mlirOperation))
+  {
+    auto inputType = std::dynamic_pointer_cast<const llvm::PointerType>(inputs[0]->Type());
+    if (!inputType)
+      JLM_UNREACHABLE("Expected pointer type for PtrToIntOp operation.");
+
+    auto intType = ::mlir::cast<::mlir::IntegerType>(ptrToIntOp.getType());
+    return rvsdg::outputs(&rvsdg::CreateOpNode<llvm::PtrToIntOperation>(
+        std::vector<jlm::rvsdg::Output *>(inputs.begin(), inputs.end()),
+        std::move(inputType),
+        rvsdg::BitType::Create(intType.getIntOrFloatBitWidth())));
   }
   else if (auto constant = ::mlir::dyn_cast<::mlir::arith::ConstantFloatOp>(&mlirOperation))
   {
@@ -721,9 +782,22 @@ MlirToJlmConverter::ConvertOperation(
     return { jlm::llvm::UndefValueOperation::Create(rvsdgRegion, jlmType) };
   }
 
+  else if (auto ArrayOp = ::mlir::dyn_cast<::mlir::jlm::ConstantArray>(&mlirOperation))
+  {
+    return { llvm::ConstantArrayOperation::Create(std::vector(inputs.begin(), inputs.end())) };
+  }
+
   else if (auto ArrayOp = ::mlir::dyn_cast<::mlir::jlm::ConstantDataArray>(&mlirOperation))
   {
     return { llvm::ConstantDataArrayOperation::Create(std::vector(inputs.begin(), inputs.end())) };
+  }
+
+  else if (auto StructOp = ::mlir::dyn_cast<::mlir::jlm::ConstantStruct>(&mlirOperation))
+  {
+    return { &llvm::ConstantStructOperation::Create(
+        rvsdgRegion,
+        std::vector(inputs.begin(), inputs.end()),
+        ConvertType(StructOp.getOutput().getType())) };
   }
 
   else if (auto ZeroOp = ::mlir::dyn_cast<::mlir::LLVM::ZeroOp>(&mlirOperation))
@@ -751,6 +825,62 @@ MlirToJlmConverter::ConvertOperation(
     return rvsdg::outputs(&rvsdg::CreateOpNode<llvm::FreeOperation>(
         std::vector(inputs.begin(), inputs.end()),
         inputs.size() - 2));
+  }
+
+  else if (auto MemcpyOp = ::mlir::dyn_cast<::mlir::jlm::Memcpy>(&mlirOperation))
+  {
+    // isVolatile is a BoolAttr property of the op. The operand layout is dst(0), src(1),
+    // len(2), then, for a volatile copy, the input I/O state (3) followed by the memory
+    // states; for a non-volatile copy the memory states start at index 3.
+    const bool isVolatile = MemcpyOp.getIsVolatile();
+
+    if (isVolatile)
+    {
+      // Volatile memcpy: dst(0), src(1), len(2), ioState(3), inputMemStates(4+)
+
+      JLM_ASSERT(inputs.size() >= 4 && "Volatile memcpy needs at least 4 inputs");
+
+      auto * dst = inputs[0];
+      auto * src = inputs[1];
+      auto * len = inputs[2];
+
+      std::vector<rvsdg::Output *> memoryStateInputs;
+      for (size_t i = 4; i < inputs.size(); ++i)
+      {
+        memoryStateInputs.push_back(inputs[i]);
+      }
+
+      // For volatile, we need to create a MemCpyVolatileOperation
+      auto lengthType = len->Type();
+
+      auto & node = llvm::MemCpyVolatileOperation::CreateNode(
+          *dst,
+          *src,
+          *len,
+          *inputs[3], // ioState (index 3 in inputs)
+          memoryStateInputs);
+      return rvsdg::outputs(&node);
+    }
+    else
+    {
+      // Non-volatile memcpy: dst(0), src(1), len(2), inputMemStates(3+)
+
+      JLM_ASSERT(inputs.size() >= 3 && "Non-volatile memcpy needs at least 3 inputs");
+
+      auto * dst = inputs[0];
+      auto * src = inputs[1];
+      auto * len = inputs[2];
+
+      std::vector<rvsdg::Output *> memoryStateInputs;
+      for (size_t i = 3; i < inputs.size(); ++i)
+      {
+        memoryStateInputs.push_back(inputs[i]);
+      }
+
+      auto & node =
+          llvm::MemCpyNonVolatileOperation::createNode(*dst, *src, *len, memoryStateInputs);
+      return rvsdg::outputs(&node);
+    }
   }
 
   else if (auto AllocaOp = ::mlir::dyn_cast<::mlir::jlm::Alloca>(&mlirOperation))
@@ -818,11 +948,15 @@ MlirToJlmConverter::ConvertOperation(
           ::mlir::dyn_cast<::mlir::rvsdg::CallExitMemoryStateSplit>(&mlirOperation))
   {
     auto memoryNodeIds = arrayAttrToMemoryNodeIds(CallExitMemstateSplitOp.getMemoryStateIndices());
+    // TODO: Add support for storing the mayModify attribute in the MLIR operation.
+    // Here we conservatively assume that the call may modify
+    std::vector<bool> mayModify(memoryNodeIds.size(), true);
 
     auto operands = std::vector(inputs.begin(), inputs.end());
     return rvsdg::outputs(&jlm::llvm::CallExitMemoryStateSplitOperation::CreateNode(
         *operands.front(),
-        std::move(memoryNodeIds)));
+        std::move(memoryNodeIds),
+        std::move(mayModify)));
   }
   else if (::mlir::isa<::mlir::rvsdg::MemoryStateJoin>(&mlirOperation))
   {
@@ -836,34 +970,80 @@ MlirToJlmConverter::ConvertOperation(
         std::vector(inputs.begin(), inputs.end()),
         ConvertType(type)));
   }
+  else if (auto hoistBarrierOp = ::mlir::dyn_cast<::mlir::jlm::MemoryHoistBarrier>(&mlirOperation))
+  {
+    return rvsdg::outputs(&llvm::MemoryHoistBarrierOperation::createNode(
+        *inputs[0],
+        *inputs[1],
+        hoistBarrierOp.getDereferenceableSize()));
+  }
   else if (auto MallocOp = ::mlir::dyn_cast<::mlir::jlm::Malloc>(&mlirOperation))
   {
     return outputs(&llvm::MallocOperation::createNode(*inputs[0], *inputs[1]));
   }
   else if (auto StoreOp = ::mlir::dyn_cast<::mlir::jlm::Store>(&mlirOperation))
   {
+    // The op is volatile iff its `isVolatile` flag is set; volatile Store operands are
+    // pointer(0), value(1), ioState(2), inputMemStates(3+), while non-volatile ones are
+    // pointer(0), value(1), inputMemStates(2+).
+    const bool isVolatile = StoreOp.getIsVolatile();
+
     auto address = inputs[0];
     auto value = inputs[1];
-    auto memoryStateInputs = std::vector(std::next(inputs.begin(), 2), inputs.end());
-    return rvsdg::outputs(&jlm::llvm::StoreNonVolatileOperation::CreateNode(
-        *address,
-        *value,
-        memoryStateInputs,
-        StoreOp.getAlignment()));
+    if (isVolatile)
+    {
+      JLM_ASSERT(inputs.size() >= 3 && "Volatile store needs at least 3 inputs");
+      std::vector<rvsdg::Output *> memoryStateInputs(std::next(inputs.begin(), 3), inputs.end());
+      return rvsdg::outputs(&jlm::llvm::StoreVolatileOperation::CreateNode(
+          *address,
+          *value,
+          *inputs[2], // ioState
+          memoryStateInputs,
+          StoreOp.getAlignment()));
+    }
+    else
+    {
+      std::vector<rvsdg::Output *> memoryStateInputs(std::next(inputs.begin(), 2), inputs.end());
+      return rvsdg::outputs(&jlm::llvm::StoreNonVolatileOperation::CreateNode(
+          *address,
+          *value,
+          memoryStateInputs,
+          StoreOp.getAlignment()));
+    }
   }
   else if (auto LoadOp = ::mlir::dyn_cast<::mlir::jlm::Load>(&mlirOperation))
   {
+    // The op is volatile iff its `isVolatile` flag is set; volatile Load operands are
+    // pointer(0), ioState(1), inputMemStates(2+), while non-volatile ones are
+    // pointer(0), inputMemStates(1+).
+    const bool isVolatile = LoadOp.getIsVolatile();
     auto address = inputs[0];
-    auto memoryStateInputs = std::vector(std::next(inputs.begin()), inputs.end());
+
     auto outputType = LoadOp.getOutput().getType();
     auto jlmType = ConvertType(outputType);
     if (jlmType->Kind() != rvsdg::TypeKind::Value)
       JLM_UNREACHABLE("Expected ValueType for LoadOp operation output.");
-    return rvsdg::outputs(&llvm::LoadNonVolatileOperation::CreateNode(
-        *address,
-        memoryStateInputs,
-        jlmType,
-        LoadOp.getAlignment()));
+
+    if (isVolatile)
+    {
+      JLM_ASSERT(inputs.size() >= 2 && "Volatile load needs at least 2 inputs");
+      std::vector<rvsdg::Output *> memoryStateInputs(std::next(inputs.begin(), 2), inputs.end());
+      return rvsdg::outputs(&llvm::LoadVolatileOperation::CreateNode(
+          *address,
+          *inputs[1], // ioState
+          memoryStateInputs,
+          jlmType,
+          LoadOp.getAlignment()));
+    }
+    else
+    {
+      std::vector<rvsdg::Output *> memoryStateInputs(std::next(inputs.begin(), 1), inputs.end());
+      return rvsdg::outputs(&llvm::LoadNonVolatileOperation::CreateNode(
+          *address,
+          memoryStateInputs,
+          jlmType,
+          LoadOp.getAlignment()));
+    }
   }
   else if (auto GepOp = ::mlir::dyn_cast<::mlir::LLVM::GEPOp>(&mlirOperation))
   {
@@ -885,13 +1065,62 @@ MlirToJlmConverter::ConvertOperation(
       else
       {
         // Constant indices are not part of the inputs to a GEPOp,
-        // but they are required as explicit nodes in RVSDG
+        // but they are required as explicit nodes in RVSDG.
         indices.push_back(
             jlm::llvm::IntegerConstantOperation::Create(rvsdgRegion, 32, constant).output(0));
       }
     }
 
     return { llvm::GetElementPtrOperation::create(inputs[0], indices, pointeeType) };
+  }
+  else if (auto bitCastOp = ::mlir::dyn_cast<::mlir::LLVM::BitcastOp>(&mlirOperation))
+  {
+    auto srcType = inputs[0]->Type();
+    auto mlirDstType = bitCastOp.getType();
+
+    // BitCast on pointer types
+    if (rvsdg::is<llvm::PointerType>(*srcType)
+        && ::mlir::isa<::mlir::LLVM::LLVMPointerType>(mlirDstType))
+    {
+      return { llvm::BitCastOperation::create(inputs[0], ConvertType(mlirDstType)) };
+    }
+    // BitCast on integer types (ExtUI or Trunc depending on size)
+    else if (auto srcBitType = dynamic_cast<const rvsdg::BitType *>(srcType.get()))
+    {
+      auto dstIntType = mlirDstType.cast<::mlir::IntegerType>();
+      auto srcBits = srcBitType->nbits();
+      auto dstBits = dstIntType.getWidth();
+
+      if (dstBits > srcBits)
+      {
+        return { &llvm::ZExtOperation::create(dstBits, *inputs[0]) };
+      }
+      else if (dstBits < srcBits)
+      {
+        return { &llvm::TruncOperation::create(dstBits, *inputs[0]) };
+      }
+      else
+      {
+        // Same bit width - just pass through with BitCastOperation
+        return { llvm::BitCastOperation::create(inputs[0], ConvertType(mlirDstType)) };
+      }
+    }
+    JLM_UNREACHABLE("Unsupported bitcast type combination in BitcastOp.");
+  }
+  else if (::mlir::isa<::mlir::jlm::FuncToPtr>(&mlirOperation))
+  {
+    auto srcFnType = std::dynamic_pointer_cast<const rvsdg::FunctionType>(inputs[0]->Type());
+    JLM_ASSERT(srcFnType);
+    auto & node = rvsdg::CreateOpNode<llvm::FunctionToPointerOperation>({ inputs[0] }, srcFnType);
+    return { node.output(0) };
+  }
+  else if (::mlir::isa<::mlir::jlm::PtrToFunc>(&mlirOperation))
+  {
+    auto dstFnType = std::dynamic_pointer_cast<const rvsdg::FunctionType>(
+        ConvertType(mlirOperation.getResult(0).getType()));
+    JLM_ASSERT(dstFnType);
+    return rvsdg::outputs(
+        &rvsdg::CreateOpNode<llvm::PointerToFunctionOperation>({ inputs[0] }, dstFnType));
   }
   // * region Structural nodes **
   else if (auto MlirCtrlConst = ::mlir::dyn_cast<::mlir::rvsdg::ConstantCtrl>(&mlirOperation))
@@ -976,7 +1205,13 @@ MlirToJlmConverter::ConvertOperation(
             ConvertLinkage(linakgeString),
             mlirDeltaNode.getSection().str(),
             mlirDeltaNode.getConstant(),
-            4)); // FIXME: the MLIR delta node does not support the alignment attribute
+            mlirDeltaNode.getAlignment().value_or(1)));
+
+    // Add context variables from inputs to delta's subregion
+    for (auto input : inputs)
+    {
+      rvsdgDeltaNode->AddContextVar(*input);
+    }
 
     auto outputVector = ConvertRegion(mlirDeltaNode.getRegion(), *rvsdgDeltaNode->subregion());
 
@@ -1164,14 +1399,15 @@ MlirToJlmConverter::ConvertLambda(
   }
   auto functionType = rvsdg::FunctionType::Create(std::move(argumentTypes), std::move(resultTypes));
 
-  // FIXME
-  // The linkage should be part of the MLIR attributes so it can be extracted here
+  // Get the linkage attribute from the MLIR LambdaNode
+  auto linkageAttribute = mlirOperation.getAttr(::llvm::StringRef("linkage"));
+  JLM_ASSERT(linkageAttribute != nullptr);
+  auto linkageStr = ::mlir::cast<::mlir::StringAttr>(linkageAttribute);
+  auto linkage = llvm::linkageFromString(linkageStr.str());
+
   auto rvsdgLambda = rvsdg::LambdaNode::Create(
       rvsdgRegion,
-      llvm::LlvmLambdaOperation::Create(
-          functionType,
-          functionName.getValue().str(),
-          llvm::Linkage::externalLinkage));
+      llvm::LlvmLambdaOperation::Create(functionType, functionName.getValue().str(), linkage));
 
   for (auto input : inputs)
   {
@@ -1260,9 +1496,10 @@ MlirToJlmConverter::ConvertType(const ::mlir::Type & type)
   }
   else if (auto structType = ::mlir::dyn_cast<::mlir::LLVM::LLVMStructType>(type))
   {
-    if (StructTypeMap_.HasKey(&structType))
+    auto key = structType.getAsOpaquePointer();
+    if (StructTypeMap_.HasKey(key))
     {
-      return StructTypeMap_.LookupKey(&structType);
+      return StructTypeMap_.LookupKey(key);
     }
 
     std::vector<std::shared_ptr<const rvsdg::Type>> types;
@@ -1284,7 +1521,7 @@ MlirToJlmConverter::ConvertType(const ::mlir::Type & type)
       jlmStructType = jlm::llvm::StructType::CreateLiteral(types, structType.isPacked());
     }
 
-    StructTypeMap_.Insert(&structType, jlmStructType);
+    StructTypeMap_.Insert(key, jlmStructType);
     return jlmStructType;
   }
   else

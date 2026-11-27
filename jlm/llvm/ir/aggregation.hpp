@@ -6,13 +6,14 @@
 #ifndef JLM_LLVM_IR_AGGREGATION_HPP
 #define JLM_LLVM_IR_AGGREGATION_HPP
 
-#include <jlm/llvm/ir/basic-block.hpp>
+#include <jlm/llvm/ir/BasicBlock.hpp>
 
 #include <memory>
 
 namespace jlm::llvm
 {
 
+class AnnotationMap;
 class ControlFlowGraph;
 
 class AggregationNode
@@ -145,6 +146,12 @@ public:
   */
   static void
   normalize(AggregationNode & node);
+
+  static std::string
+  toAscii(const AggregationNode & node, const AnnotationMap & map);
+
+  static std::string
+  toAscii(const AggregationNode & node);
 
 private:
   void

@@ -92,4 +92,212 @@ MemSetNonVolatileOperation::numMemoryStates() const noexcept
   return nresults();
 }
 
+MemMoveNonVolatileOperation::~MemMoveNonVolatileOperation() noexcept = default;
+
+bool
+MemMoveNonVolatileOperation::operator==(const Operation & other) const noexcept
+{
+  const auto operation = dynamic_cast<const MemMoveNonVolatileOperation *>(&other);
+  return operation && operation->lengthType() == lengthType()
+      && operation->numMemoryStates() == numMemoryStates();
+}
+
+std::string
+MemMoveNonVolatileOperation::debug_string() const
+{
+  return "MemMove";
+}
+
+std::unique_ptr<rvsdg::Operation>
+MemMoveNonVolatileOperation::copy() const
+{
+  return std::make_unique<MemMoveNonVolatileOperation>(*this);
+}
+
+size_t
+MemMoveNonVolatileOperation::numMemoryStates() const noexcept
+{
+  return nresults();
+}
+
+UMaxOperation::~UMaxOperation() noexcept = default;
+
+bool
+UMaxOperation::operator==(const Operation & other) const noexcept
+{
+  const auto operation = dynamic_cast<const UMaxOperation *>(&other);
+  return operation && *operation->getType() == *getType();
+}
+
+std::string
+UMaxOperation::debug_string() const
+{
+  return util::strfmt("UMax[", getType()->debug_string(), "]");
+}
+
+std::unique_ptr<rvsdg::Operation>
+UMaxOperation::copy() const
+{
+  return std::make_unique<UMaxOperation>(*this);
+}
+
+void
+UMaxOperation::checkType(const std::shared_ptr<const rvsdg::Type> & type)
+{
+  if (!is<const rvsdg::BitType>(type) && !isVectorOf<const rvsdg::BitType>(*type))
+  {
+    throw std::runtime_error("UMaxOperation::checkType: Expected integer type.");
+  }
+}
+
+SMinOperation::~SMinOperation() noexcept = default;
+
+bool
+SMinOperation::operator==(const Operation & other) const noexcept
+{
+  const auto operation = dynamic_cast<const SMinOperation *>(&other);
+  return operation && *operation->getType() == *getType();
+}
+
+std::string
+SMinOperation::debug_string() const
+{
+  return util::strfmt("SMin[", getType()->debug_string(), "]");
+}
+
+std::unique_ptr<rvsdg::Operation>
+SMinOperation::copy() const
+{
+  return std::make_unique<SMinOperation>(*this);
+}
+
+void
+SMinOperation::checkType(const std::shared_ptr<const rvsdg::Type> & type)
+{
+  if (!is<const rvsdg::BitType>(type) && !isVectorOf<const rvsdg::BitType>(*type))
+  {
+    throw std::runtime_error("SMinOperation::checkType: Expected integer type.");
+  }
+}
+
+UMinOperation::~UMinOperation() noexcept = default;
+
+bool
+UMinOperation::operator==(const Operation & other) const noexcept
+{
+  const auto operation = dynamic_cast<const UMinOperation *>(&other);
+  return operation && *operation->getType() == *getType();
+}
+
+std::string
+UMinOperation::debug_string() const
+{
+  return util::strfmt("UMin[", getType()->debug_string(), "]");
+}
+
+std::unique_ptr<rvsdg::Operation>
+UMinOperation::copy() const
+{
+  return std::make_unique<UMinOperation>(*this);
+}
+
+void
+UMinOperation::checkType(const std::shared_ptr<const rvsdg::Type> & type)
+{
+  if (!is<const rvsdg::BitType>(type) && !isVectorOf<const rvsdg::BitType>(*type))
+  {
+    throw std::runtime_error("UMinOperation::checkType: Expected integer type.");
+  }
+}
+
+FAbsOperation::~FAbsOperation() noexcept = default;
+
+bool
+FAbsOperation::operator==(const Operation & other) const noexcept
+{
+  const auto operation = dynamic_cast<const FAbsOperation *>(&other);
+  return operation && *operation->getType() == *getType();
+}
+
+std::string
+FAbsOperation::debug_string() const
+{
+  return util::strfmt("FAbs[", getType()->debug_string(), "]");
+}
+
+std::unique_ptr<rvsdg::Operation>
+FAbsOperation::copy() const
+{
+  return std::make_unique<FAbsOperation>(*this);
+}
+
+void
+FAbsOperation::checkType(const std::shared_ptr<const rvsdg::Type> & type)
+{
+  if (!is<const FloatingPointType>(type) && !isVectorOf<const FloatingPointType>(*type))
+  {
+    throw std::runtime_error("FAbsOperation::checkType: Expected floating point type.");
+  }
+}
+
+AbsOperation::~AbsOperation() noexcept = default;
+
+bool
+AbsOperation::operator==(const Operation & other) const noexcept
+{
+  const auto operation = dynamic_cast<const AbsOperation *>(&other);
+  return operation && *operation->getType() == *getType();
+}
+
+std::string
+AbsOperation::debug_string() const
+{
+  return util::strfmt("Abs[", getType()->debug_string(), "]");
+}
+
+std::unique_ptr<rvsdg::Operation>
+AbsOperation::copy() const
+{
+  return std::make_unique<AbsOperation>(*this);
+}
+
+void
+AbsOperation::checkType(const std::shared_ptr<const rvsdg::Type> & type)
+{
+  if (!is<const rvsdg::BitType>(type) && !isVectorOf<const rvsdg::BitType>(*type))
+  {
+    throw std::runtime_error("AbsOperation::checkType: Expected integer type.");
+  }
+}
+
+SMaxOperation::~SMaxOperation() noexcept = default;
+
+bool
+SMaxOperation::operator==(const Operation & other) const noexcept
+{
+  const auto operation = dynamic_cast<const SMaxOperation *>(&other);
+  return operation && *operation->getType() == *getType();
+}
+
+std::string
+SMaxOperation::debug_string() const
+{
+  return util::strfmt("SMax[", getType()->debug_string(), "]");
+}
+
+std::unique_ptr<rvsdg::Operation>
+SMaxOperation::copy() const
+{
+  return std::make_unique<SMaxOperation>(*this);
+}
+
+void
+SMaxOperation::checkType(const std::shared_ptr<const rvsdg::Type> & type)
+{
+  if (!is<const rvsdg::BitType>(type) && !isVectorOf<const rvsdg::BitType>(*type))
+  {
+    throw std::runtime_error("SMaxOperation::checkType: Expected integer type.");
+  }
+}
+
 }

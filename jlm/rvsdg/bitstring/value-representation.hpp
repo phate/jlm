@@ -362,6 +362,18 @@ public:
     return true;
   }
 
+  bool
+  isZero() const noexcept
+  {
+    for (const auto bit : data_)
+    {
+      if (bit != '0')
+        return false;
+    }
+
+    return true;
+  }
+
   inline bool
   is_negative() const noexcept
   {
@@ -628,6 +640,9 @@ public:
   BitValueRepresentation
   shl(size_t shift) const
   {
+    if (shift == 0)
+      return *this;
+
     if (shift >= nbits())
       return repeat(nbits(), '0');
 

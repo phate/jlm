@@ -9,7 +9,7 @@
 #include <jlm/llvm/ir/tac.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/graph.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 
 #include <optional>
 
@@ -71,6 +71,21 @@ public:
     return NumMemoryStates_;
   }
 
+  /**
+   * Returns the number of memory states going through a \ref StoreOperation node.
+   *
+   * @param node A \ref StoreOperation node.
+   * @return the number of memory states routed through \p node.
+   *
+   * @pre \p node is expected to be a \ref StoreOperation node.
+   */
+  [[nodiscard]] static size_t
+  numMemoryStates(const rvsdg::SimpleNode & node) noexcept
+  {
+    const auto storeOperation = util::assertedCast<const StoreOperation>(&node.GetOperation());
+    return storeOperation->NumMemoryStates_;
+  }
+
   [[nodiscard]] static rvsdg::Input &
   AddressInput(const rvsdg::Node & node) noexcept
   {
@@ -125,6 +140,24 @@ public:
         node.input(storeOperation->narguments() - storeOperation->NumMemoryStates_);
     JLM_ASSERT(is<MemoryStateType>(firstMemoryStateInput->Type()));
     return { rvsdg::Input::Iterator(firstMemoryStateInput), rvsdg::Input::Iterator(nullptr) };
+  }
+
+  /**
+   * Returns the memory state operands of \p node.
+   *
+   * \pre \p node is expected to have a \ref StoreOperation.
+   *
+   * @param node A \ref StoreOperation node
+   * @return A vector with the memory state operands.
+   */
+  [[nodiscard]] static std::vector<rvsdg::Output *>
+  getMemoryStateOperands(const rvsdg::Node & node) noexcept
+  {
+    std::vector<rvsdg::Output *> operands;
+    for (auto & input : getMemoryStateInputs(node))
+      operands.push_back(input.origin());
+
+    return operands;
   }
 
   /**
@@ -208,15 +241,15 @@ public:
    * =>
    * sx1 sx2 = StoreNonVolatileOperation a v2 si1 si2
    *
-   * @param operation The operation of the second StoreNonVolatile node.
+   * @param store2Op The operation of the second StoreNonVolatile node.
    * @param operands The operands of the second StoreNonVolatile node.
    *
    * @return If the normalization could be applied, the results of the
    * remaining store operation are returned. Otherwise std::nullopt.
    */
   static std::optional<std::vector<rvsdg::Output *>>
-  NormalizeStoreStore(
-      const StoreNonVolatileOperation & operation,
+  normalizeStoreStore(
+      const StoreNonVolatileOperation & store2Op,
       const std::vector<rvsdg::Output *> & operands);
 
   /**
@@ -261,26 +294,30 @@ public:
       const std::vector<rvsdg::Output *> & operands);
 
   /**
-   * \brief Redirect the address operand of the StoreNonVolatileOperation from an IOBarrierOperation
-   * when it can be determined that it originates from an AllocaOperation.
+   * \brief Redirect the address operand of the \ref StoreNonVolatileOperation node from an \ref
+   * MemoryHoistBarrierOperation node when it can be determined that the address operand is
+   * dereferenceable.
+   *
+   * For example:
    *
    * a1 memState = AllocaOperation ...
-   * a2 = IOBarrierOperation a1 ioState
+   * a2 = MemoryHoistBarrierOperation a1 ioState
    * ... = StoreNonVolatileOperation a2 ...
    * =>
    * a1 memState = AllocaOperation ...
-   * a2 = IOBarrierOperation a1 ioState
+   * a2 = MemoryHoistBarrierOperation a1 ioState
    * ... = StoreNonVolatileOperation a1 ...
    *
-   * @param operation The StoreNonVolatileOperation on which the transformation is performed.
-   * @param operands The operands of the StoreNonVolatileOperation node.
+   * @param storeOperation The \ref StoreNonVolatileOperation on which the transformation is
+   * performed.
+   * @param operands The operands of the \ref StoreNonVolatileOperation node.
    *
    * @return If the normalization could be applied, then the results of the
-   * StoreNonVolatileOperation node after the transformation. Otherwise, std::nullopt.
+   * \ref StoreNonVolatileOperation node after the transformation. Otherwise, std::nullopt.
    */
   static std::optional<std::vector<rvsdg::Output *>>
-  NormalizeIOBarrierAllocaAddress(
-      const StoreNonVolatileOperation & operation,
+  normalizeMemoryHoistBarrierAddress(
+      const StoreNonVolatileOperation & storeOperation,
       const std::vector<rvsdg::Output *> & operands);
 
   /**

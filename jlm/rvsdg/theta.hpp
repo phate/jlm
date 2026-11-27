@@ -9,7 +9,7 @@
 
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/region.hpp>
-#include <jlm/rvsdg/structural-node.hpp>
+#include <jlm/rvsdg/StructuralNode.hpp>
 #include <jlm/util/HashSet.hpp>
 
 #include <optional>
@@ -64,6 +64,17 @@ public:
      * \brief Variable at loop exit (output of theta).
      */
     rvsdg::Output * output;
+  };
+
+  /**
+   * \brief Description of the loop predicate variable.
+   */
+  struct PredicateVar
+  {
+    /**
+     * \brief Use of the predicate variable at end of loop
+     */
+    rvsdg::Input * predicate;
   };
 
   [[nodiscard]] const ThetaOperation &
@@ -178,7 +189,7 @@ public:
   MapPreLoopVar(const rvsdg::Output & argument) const;
 
   /**
-   * \brief Maps variable at end of loop iteration to full varibale description.
+   * \brief Maps variable at end of loop iteration to full variable description.
    *
    * \param result
    *   Result of theta region.
@@ -194,6 +205,24 @@ public:
    */
   [[nodiscard]] LoopVar
   MapPostLoopVar(const rvsdg::Input & result) const;
+
+  /**
+   * \brief Maps variable at end of loop iteration to variable description.
+   *
+   * \param result
+   *   Result of theta region.
+   *
+   * \returns
+   *   The loop variable description.
+   *
+   * \pre
+   *   \p result must be a result to the subregion of this node.
+   *
+   * Returns the full description of the loop variable corresponding
+   * to this variable at the end of each loop iteration.
+   */
+  [[nodiscard]] std::variant<LoopVar, PredicateVar>
+  mapResult(const rvsdg::Input & result) const;
 
   /**
    * \brief Maps variable at exit to full varibale description.
@@ -221,6 +250,16 @@ public:
    */
   [[nodiscard]] std::vector<LoopVar>
   GetLoopVars() const;
+
+  /**
+   * Removes a \ref ThetaNode with a statically known false predicate by copying its subregion to
+   * the theta node's parent region.
+   *
+   * @param node The \ref ThetaNode that is supposed to be reduced.
+   * @return True, if transformation was successful, otherwise false.
+   */
+  static bool
+  reduceStaticallyKnownPredicate(Node & node);
 };
 
 static inline bool

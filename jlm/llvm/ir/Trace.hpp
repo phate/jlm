@@ -18,17 +18,28 @@ namespace jlm::llvm
 class OutputTracer : public rvsdg::OutputTracer
 {
 public:
-  explicit OutputTracer(bool enableCaching);
+  explicit OutputTracer();
 
   /**
    * When enabled, tracing can continue through the memory state output of a load,
    * and keep tracing from the load's memory state input.
    * @return true if tracing states through loads is enabled, false otherwise
    */
-  bool
-  isTracingThroughLoadedStates()
+  [[nodiscard]] bool
+  isTracingThroughLoadedStates() const noexcept
   {
     return traceThroughLoadedStates_;
+  }
+
+  /**
+   * When enabled, tracing can continue through the output of a hoist barrier,
+   * continuing from the hoist barrier's input.
+   * @return true if tracing through hoist barriers is enabled, otherwise false.
+   */
+  [[nodiscard]] bool
+  isTracingThroughHoistBarriers() const noexcept
+  {
+    return traceThroughHoistBarriers_;
   }
 
   /**
@@ -36,37 +47,56 @@ public:
    * @param traceThroughLoadedStates the new value
    */
   void
-  setTraceThroughLoadedStates(bool traceThroughLoadedStates)
+  setTraceThroughLoadedStates(const bool traceThroughLoadedStates)
   {
     traceThroughLoadedStates_ = traceThroughLoadedStates;
   }
 
+  /**
+   * Enables or disables tracing through hoist barriers.
+   * @param traceThroughHoistBarriers the new value
+   */
+  void
+  setTracingThroughHoistBarriers(const bool traceThroughHoistBarriers)
+  {
+    traceThroughHoistBarriers_ = traceThroughHoistBarriers;
+  }
+
 protected:
-  [[nodiscard]] rvsdg::Output &
-  traceStep(rvsdg::Output & output, const rvsdg::Region * withinRegion) override;
+  [[nodiscard]] TraceStepResult
+  traceStep(rvsdg::Output & output, BackEdgeState backEdgeState, const rvsdg::Region * withinRegion)
+      override;
 
 private:
   bool traceThroughLoadedStates_ = false;
+  bool traceThroughHoistBarriers_ = true;
 };
 
 /**
- * Traces the origin of the given \p output to find the origin of the value. The optional parameter
- * \p withinRegion prevents values from being traced out of the region. If it is a nullptr, tracing
- * will continue until the output no longer changes.
+ * Traces the origin of the given \p output to find the origin of the value.
+ * The optional parameter \p withinRegion prevents values from being traced out of the region.
+ * If it is a nullptr, tracing will continue until the output no longer changes.
  * Traces through everything handled by \ref jlm::rvsdg::traceOutput, with the addition of
  * LLVM-specific operations.
  *
  * @param output the output to start tracing from
+ * @param mayEnterSubregions if true, the result can be in a sub/sibling region
  * @param withinRegion the region to stop at (if any).
  * @return the maximally traced output
  */
 rvsdg::Output &
-traceOutput(rvsdg::Output & output, const rvsdg::Region * withinRegion = nullptr);
+traceOutput(
+    rvsdg::Output & output,
+    bool mayEnterSubregions,
+    const rvsdg::Region * withinRegion = nullptr);
 
 inline const rvsdg::Output &
-traceOutput(const rvsdg::Output & output, const rvsdg::Region * withinRegion = nullptr)
+traceOutput(
+    const rvsdg::Output & output,
+    bool mayEnterSubregions,
+    const rvsdg::Region * withinRegion = nullptr)
 {
-  return llvm::traceOutput(const_cast<rvsdg::Output &>(output), withinRegion);
+  return llvm::traceOutput(const_cast<rvsdg::Output &>(output), mayEnterSubregions, withinRegion);
 }
 
 /**

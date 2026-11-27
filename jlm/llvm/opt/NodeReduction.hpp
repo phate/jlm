@@ -6,7 +6,7 @@
 #ifndef JLM_LLVM_OPT_NODEREDUCTION_HPP
 #define JLM_LLVM_OPT_NODEREDUCTION_HPP
 
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -20,6 +20,7 @@ class Node;
 class Region;
 class Output;
 class StructuralNode;
+class ThetaNode;
 }
 
 namespace jlm::llvm
@@ -70,6 +71,9 @@ private:
 
   bool
   ReduceGammaNode(rvsdg::GammaNode & gammaNode);
+
+  bool
+  reduceThetaNode(rvsdg::ThetaNode & thetaNode);
 
   bool
   ReduceSimpleNode(rvsdg::SimpleNode & simpleNode);
@@ -134,9 +138,13 @@ public:
     size_t numLambdaExitMemoryStateMergeReductions = 0;
 
     size_t numMatchReductions = 0;
+    size_t numBitToIntegerTypeReductions = 0;
+    size_t numIntegerToBitTypeReductions = 0;
     size_t numSExtReductions = 0;
     size_t numZExtReductions = 0;
     size_t numTruncReductions = 0;
+    size_t numFPExtReductions = 0;
+    size_t numFPTruncReductions = 0;
 
     size_t numIntegerEqReductions = 0;
     size_t numIntegerNeReductions = 0;
@@ -149,15 +157,30 @@ public:
     size_t numIntegerUleReductions = 0;
     size_t numIntegerUltReductions = 0;
 
+    size_t numIntegerAddReductions = 0;
     size_t numIntegerSubReductions = 0;
+    size_t numIntegerMulReductions = 0;
+    size_t numIntegerSDivReductions = 0;
+    size_t numIntegerUDivReductions = 0;
+    size_t numIntegerSRemReductions = 0;
+    size_t numIntegerURemReductions = 0;
+    size_t numIntegerAShrReductions = 0;
+    size_t numIntegerShlReductions = 0;
+    size_t numIntegerLShrReductions = 0;
     size_t numIntegerAndReductions = 0;
     size_t numIntegerOrReductions = 0;
     size_t numIntegerXorReductions = 0;
 
+    size_t numFPBinaryOpReductions = 0;
+
     size_t numPtrCmpReductions = 0;
+    size_t numGetElementPtrReductions = 0;
+    size_t numFCmpReductions = 0;
+    size_t numMemoryHoistBarrierReductions = 0;
     size_t numBinaryReductions = 0;
 
     size_t numGammaReductions = 0;
+    size_t numThetaReductions = 0;
   };
 
   [[nodiscard]] ReductionCounters &

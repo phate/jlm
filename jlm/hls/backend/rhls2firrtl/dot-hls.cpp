@@ -322,19 +322,23 @@ DotHLS::prepare_loop_out_port(LoopNode * ln)
   for (size_t i = 0; i < sr->narguments(); ++i)
   {
     auto arg = sr->argument(i);
-    auto ba = dynamic_cast<BackEdgeArgument *>(arg);
-    if (!ba)
+    auto var = ln->mapArgument(*arg);
+    if (auto entry = std::get_if<LoopNode::EntryVar>(&var))
     {
-      JLM_ASSERT(arg->input() != nullptr);
+      JLM_ASSERT(entry->input != nullptr);
       // map to input of loop
-      output_map[arg] = output_map[arg->input()->origin()];
+      output_map[arg] = output_map[entry->input->origin()];
     }
-    else
+    else if (auto ba = std::get_if<LoopNode::BackEdgeVar>(&var))
     {
-      auto result = ba->result();
+      auto result = ba->post;
       JLM_ASSERT(*result->Type() == *arg->Type());
       // map to end of loop (origin of associated result)
       output_map[arg] = output_map[result->origin()];
+    }
+    else
+    {
+      throw std::logic_error("LoopNode argument is neither backedge nor entry");
     }
   }
   for (size_t i = 0; i < ln->noutputs(); ++i)

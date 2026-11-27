@@ -13,7 +13,7 @@
 #include <jlm/rvsdg/binary.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/control.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 #include <jlm/rvsdg/type.hpp>
 #include <jlm/rvsdg/unary.hpp>
 
@@ -463,9 +463,11 @@ public:
   }
 
   /**
-   * Checks if the comparison is between a \ref ConstantPointerNullOperation and an allocation side
-   * guaranteed to never return a nullptr, and normalizes the \ref PtrCmpOperation to an
-   * \ref IntegerConstantOperation.
+   * Checks if the comparison is between:
+   * 1. a \ref ConstantPointerNullOperation and an allocation side guaranteed to never return a
+   * nullptr
+   * 2. two \ref ConstantPointerNullOperation%s
+   * and normalizes the \ref PtrCmpOperation to an \ref IntegerConstantOperation.
    *
    * @param ptrCmpOperation The \ref PtrCmpOperation on which the transformation is performed.
    * @param operands The operands of the \ref PtrCmpOperation node.
@@ -475,6 +477,27 @@ public:
    */
   static std::optional<std::vector<rvsdg::Output *>>
   normalizeNullPointerComparison(
+      const PtrCmpOperation & ptrCmpOperation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  /**
+   * Performs the following normalizations:
+   * y = PtrCmpOperation [eq, sge, sle, uge, ule] x x
+   * =>
+   * y = 1
+   *
+   * y = PtrCmpOperation [ne, sgt, slt, ult, ugt] x x
+   * =>
+   * y = 0
+   *
+   * @param ptrCmpOperation The \ref PtrCmpOperation on which the transformation is performed.
+   * @param operands The operands of the \ref PtrCmpOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref PtrCmpOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeIdenticalOperands(
       const PtrCmpOperation & ptrCmpOperation,
       const std::vector<rvsdg::Output *> & operands);
 
@@ -552,6 +575,8 @@ public:
     {
     case fpsize::half:
       return ::llvm::APFloat::getZero(::llvm::APFloat::IEEEhalf());
+    case fpsize::bfloat:
+      return ::llvm::APFloat::getZero(::llvm::APFloat::BFloat());
     case fpsize::flt:
       return ::llvm::APFloat::getZero(::llvm::APFloat::IEEEsingle());
     case fpsize::dbl:
@@ -640,6 +665,19 @@ public:
   {
     return std::static_pointer_cast<const FloatingPointType>(argument(0))->size();
   }
+
+  /**
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref FCmpOperation on which the transformation is performed.
+   * @param operands The operands of the \ref FCmpOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref FCmpOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(const FCmpOperation & operation, const std::vector<rvsdg::Output *> & operands);
 
   static std::unique_ptr<llvm::ThreeAddressCode>
   create(const fpcmp & cmp, const Variable * op1, const Variable * op2)
@@ -907,6 +945,19 @@ public:
     auto op = std::make_unique<FBinaryOperation>(fpop, ft);
     return ThreeAddressCode::create(std::move(op), { op1, op2 });
   }
+
+  /**
+   * Performs constant folding by statically evaluating the two constant operands and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref FBinaryOperation on which the transformation is performed.
+   * @param operands The operands of the \ref FBinaryOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref FBinaryOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstants(const FBinaryOperation & operation, const std::vector<rvsdg::Output *> & operands);
 
 private:
   llvm::fpop op_;
@@ -1712,8 +1763,8 @@ class FreeOperation final : public rvsdg::SimpleOperation
 public:
   ~FreeOperation() noexcept override;
 
-  explicit FreeOperation(size_t numMemoryStates)
-      : SimpleOperation(CreateOperandTypes(numMemoryStates), CreateResultTypes(numMemoryStates))
+  explicit FreeOperation(const size_t numMemoryStates)
+      : SimpleOperation(createOperandTypes(numMemoryStates), createResultTypes(numMemoryStates))
   {}
 
   bool
@@ -1725,17 +1776,42 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
+  [[nodiscard]] size_t
+  numMemoryStates() const noexcept
+  {
+    JLM_ASSERT(nresults() >= 1);
+    return nresults() - 1;
+  }
+
   /**
    * @param node a SimpleNode containing a FreeOperation
    * @return the input of \p node that takes the pointer value to be freed.
    */
   [[nodiscard]] static rvsdg::Input &
-  addressInput(const rvsdg::Node & node) noexcept
+  getAddressInput(const rvsdg::Node & node) noexcept
   {
     JLM_ASSERT(is<FreeOperation>(&node));
     const auto input = node.input(0);
     JLM_ASSERT(is<PointerType>(input->Type()));
     return *input;
+  }
+
+  [[nodiscard]] static rvsdg::Input &
+  getIOStateInput(const rvsdg::Node & node) noexcept
+  {
+    JLM_ASSERT(is<FreeOperation>(&node));
+    const auto input = node.input(1);
+    JLM_ASSERT(is<IOStateType>(input->Type()));
+    return *input;
+  }
+
+  [[nodiscard]] static rvsdg::Output &
+  getIOStateOutput(const rvsdg::Node & node) noexcept
+  {
+    JLM_ASSERT(is<FreeOperation>(&node));
+    const auto output = node.output(0);
+    JLM_ASSERT(is<IOStateType>(output->Type()));
+    return *output;
   }
 
   [[nodiscard]] static rvsdg::Input &
@@ -1749,57 +1825,74 @@ public:
     return *input;
   }
 
-  static std::unique_ptr<llvm::ThreeAddressCode>
+  [[nodiscard]] static rvsdg::Node::OutputIteratorRange
+  memoryStateOutputs(const rvsdg::Node & node) noexcept
+  {
+    const auto freeOperation = util::assertedCast<const FreeOperation>(&node.GetOperation());
+    if (freeOperation->numMemoryStates() == 0)
+    {
+      return { rvsdg::Output::Iterator(nullptr), rvsdg::Output::Iterator(nullptr) };
+    }
+
+    const auto firstMemoryStateOutput = node.output(1);
+    JLM_ASSERT(is<MemoryStateType>(firstMemoryStateOutput->Type()));
+    return { rvsdg::Output::Iterator(firstMemoryStateOutput), rvsdg::Output::Iterator(nullptr) };
+  }
+
+  static std::unique_ptr<ThreeAddressCode>
   Create(
       const Variable * pointer,
-      const std::vector<const Variable *> & memoryStates,
-      const Variable * iOState)
+      const Variable * iOState,
+      const std::vector<const Variable *> & memoryStates)
   {
     std::vector<const Variable *> operands;
     operands.push_back(pointer);
-    operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
     operands.push_back(iOState);
+    operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
     auto operation = std::make_unique<FreeOperation>(memoryStates.size());
     return ThreeAddressCode::create(std::move(operation), operands);
   }
 
-  static std::vector<jlm::rvsdg::Output *>
-  Create(
-      jlm::rvsdg::Output * pointer,
-      const std::vector<jlm::rvsdg::Output *> & memoryStates,
-      jlm::rvsdg::Output * iOState)
+  static rvsdg::SimpleNode &
+  createNode(
+      rvsdg::Output & pointer,
+      rvsdg::Output & iOState,
+      const std::vector<rvsdg::Output *> & memoryStates)
   {
-    std::vector<jlm::rvsdg::Output *> operands;
-    operands.push_back(pointer);
+    std::vector<rvsdg::Output *> operands;
+    operands.push_back(&pointer);
+    operands.push_back(&iOState);
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
-    operands.push_back(iOState);
 
-    return outputs(&rvsdg::CreateOpNode<FreeOperation>(operands, memoryStates.size()));
+    return rvsdg::CreateOpNode<FreeOperation>(operands, memoryStates.size());
+  }
+
+  static std::vector<rvsdg::Output *>
+  Create(
+      rvsdg::Output & pointer,
+      rvsdg::Output & IOState,
+      const std::vector<rvsdg::Output *> & memoryStates)
+  {
+    return outputs(&createNode(pointer, IOState, memoryStates));
   }
 
 private:
   static std::vector<std::shared_ptr<const rvsdg::Type>>
-  CreateOperandTypes(size_t numMemoryStates)
+  createOperandTypes(const size_t numMemoryStates)
   {
-    std::vector<std::shared_ptr<const rvsdg::Type>> memoryStates(
-        numMemoryStates,
-        MemoryStateType::Create());
-
-    std::vector<std::shared_ptr<const rvsdg::Type>> types({ PointerType::Create() });
-    types.insert(types.end(), memoryStates.begin(), memoryStates.end());
-    types.emplace_back(IOStateType::Create());
+    std::vector<std::shared_ptr<const rvsdg::Type>> types(
+        { PointerType::Create(), IOStateType::Create() });
+    types.insert(types.end(), numMemoryStates, MemoryStateType::Create());
 
     return types;
   }
 
   static std::vector<std::shared_ptr<const rvsdg::Type>>
-  CreateResultTypes(size_t numMemoryStates)
+  createResultTypes(const size_t numMemoryStates)
   {
-    std::vector<std::shared_ptr<const rvsdg::Type>> types(
-        numMemoryStates,
-        MemoryStateType::Create());
-    types.emplace_back(IOStateType::Create());
+    std::vector<std::shared_ptr<const rvsdg::Type>> types({ IOStateType::Create() });
+    types.insert(types.end(), numMemoryStates, MemoryStateType::Create());
 
     return types;
   }

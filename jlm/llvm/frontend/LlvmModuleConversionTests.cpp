@@ -7,19 +7,55 @@
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/CallingConvention.hpp>
-#include <jlm/llvm/ir/cfg.hpp>
+#include <jlm/llvm/ir/ControlFlowGraph.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/ipgraph.hpp>
 #include <jlm/llvm/ir/operators/AggregateOperations.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/StdLibIntrinsicOperations.hpp>
-#include <jlm/llvm/ir/print.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
 
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
+
+#include <iterator>
+
+TEST(LlvmModuleConversionTests, BfloatScalarConstantConversion)
+{
+  // Arrange
+  ::llvm::LLVMContext context;
+  ::llvm::Module module("module", context);
+  constexpr uint16_t bits[] = { 0x3f80, 0x8000, 0x7fc1 };
+  for (size_t i = 0; i < std::size(bits); ++i)
+  {
+    auto value = ::llvm::APFloat(::llvm::APFloat::BFloat(), ::llvm::APInt(16, bits[i]));
+    auto constant = ::llvm::ConstantFP::get(context, value);
+    auto global = ::llvm::cast<::llvm::GlobalVariable>(
+        module.getOrInsertGlobal("scalar" + std::to_string(i), constant->getType()));
+    global->setConstant(true);
+    global->setInitializer(constant);
+  }
+
+  // Act
+  auto ipg = jlm::llvm::ConvertLlvmModule(module);
+
+  // Assert
+  for (size_t i = 0; i < std::size(bits); ++i)
+  {
+    auto node = dynamic_cast<const jlm::llvm::DataNode *>(
+        ipg->ipgraph().find("scalar" + std::to_string(i)));
+    ASSERT_NE(node, nullptr);
+    ASSERT_NE(node->initialization(), nullptr);
+    const auto & tacs = node->initialization()->tacs();
+    ASSERT_EQ(tacs.size(), 1u);
+    auto op = dynamic_cast<const jlm::llvm::ConstantFP *>(&tacs[0]->operation());
+    ASSERT_NE(op, nullptr);
+    EXPECT_EQ(op->size(), jlm::llvm::fpsize::bfloat);
+    EXPECT_EQ(op->constant().bitcastToAPInt().getZExtValue(), bits[i]);
+  }
+}
 
 TEST(LlvmModuleConversionTests, SwitchConversion)
 {
@@ -74,7 +110,7 @@ TEST(LlvmModuleConversionTests, SwitchConversion)
 
   // Act
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
-  print(*ipgModule, stdout);
+  std::cout << jlm::llvm::InterProceduralGraph::toAscii(ipgModule->ipgraph()) << std::endl;
 
   // Assert
   {
@@ -119,7 +155,7 @@ TEST(LlvmModuleConversionTests, FreezeConversion)
 
   // Act
   auto ipgModule = jlm::llvm::ConvertLlvmModule(llvmModule);
-  print(*ipgModule, stdout);
+  std::cout << jlm::llvm::InterProceduralGraph::toAscii(ipgModule->ipgraph()) << std::endl;
 
   // Assert
   {
@@ -182,7 +218,7 @@ TEST(LlvmModuleConversionTests, InsertValueConversion)
 
   // Act
   auto ipgModule = jlm::llvm::ConvertLlvmModule(llvmModule);
-  print(*ipgModule, stdout);
+  std::cout << jlm::llvm::InterProceduralGraph::toAscii(ipgModule->ipgraph()) << std::endl;
 
   // Assert
   {
@@ -385,7 +421,7 @@ TEST(LlvmModuleConversionTests, MemCpyConversion)
 
   // Act
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
-  print(*ipgModule, stdout);
+  std::cout << jlm::llvm::InterProceduralGraph::toAscii(ipgModule->ipgraph()) << std::endl;
 
   // Assert
   {
@@ -458,7 +494,7 @@ TEST(LlvmModuleConversionTests, MemSetConversion)
 
   // Act
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
-  print(*ipgModule, stdout);
+  std::cout << jlm::llvm::InterProceduralGraph::toAscii(ipgModule->ipgraph()) << std::endl;
 
   // Assert
   {

@@ -8,6 +8,8 @@
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/hls/util/view.hpp>
+#include <jlm/rvsdg/MatchType.hpp>
+#include <jlm/rvsdg/MatchVariant.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
 namespace jlm::hls
@@ -16,36 +18,49 @@ namespace jlm::hls
 static rvsdg::Input *
 FindUserNode(rvsdg::Output * out)
 {
-
   auto user = &out->SingleUser();
-  if (auto br = dynamic_cast<BackEdgeResult *>(user))
-  {
-    return FindUserNode(br->argument());
-  }
-  else if (auto rr = dynamic_cast<rvsdg::RegionResult *>(user))
-  {
 
-    if (rr->output() && rvsdg::TryGetOwnerNode<LoopNode>(*rr->output()))
-    {
-      return FindUserNode(rr->output());
-    }
-    else
-    {
-      // lambda result
-      return rr;
-    }
-  }
-  else if (auto si = dynamic_cast<rvsdg::StructuralInput *>(user))
-  {
-    JLM_ASSERT(rvsdg::TryGetOwnerNode<LoopNode>(*user));
-    return FindUserNode(si->arguments.begin().ptr());
-  }
-  else if (rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*user))
-  {
-    return user;
-  }
-
-  JLM_UNREACHABLE("This should not have happened!");
+  return rvsdg::MatchVariant(
+      user->GetOwner(),
+      [&](rvsdg::Region * region)
+      {
+        if (!region->node())
+        {
+          return user;
+        }
+        return rvsdg::MatchTypeWithDefault(
+            *region->node(),
+            [&](LoopNode & loopNode)
+            {
+              return rvsdg::MatchVariant(
+                  loopNode.mapResult(*user),
+                  [&](const LoopNode::BackEdgeVar & backedge)
+                  {
+                    return FindUserNode(backedge.pre);
+                  },
+                  [&](const LoopNode::ExitVar & exit)
+                  {
+                    return FindUserNode(exit.output);
+                  });
+            },
+            [&]()
+            {
+              return user;
+            });
+      },
+      [&](rvsdg::Node * node)
+      {
+        return rvsdg::MatchTypeOrFail(
+            *node,
+            [&](LoopNode & loopNode)
+            {
+              return FindUserNode(loopNode.mapInput(*user).inner);
+            },
+            [&](rvsdg::SimpleNode &)
+            {
+              return user;
+            });
+      });
 }
 
 static void
@@ -390,10 +405,10 @@ NodeCapacity(rvsdg::SimpleNode * node, std::vector<size_t> & input_capacities)
 
 static void
 CreateLoopFrontier(
-    const LoopNode * loop,
+    LoopNode * loop,
     std::unordered_map<rvsdg::Output *, size_t> & output_cycles,
     std::unordered_set<rvsdg::Input *> & frontier,
-    std::unordered_set<BackEdgeResult *> & stream_backedges,
+    std::unordered_set<rvsdg::Input *> & stream_backedges,
     std::unordered_set<rvsdg::SimpleNode *> & top_muxes)
 {
   for (size_t i = 0; i < loop->ninputs(); ++i)
@@ -426,7 +441,8 @@ CreateLoopFrontier(
   }
   for (auto arg : loop->subregion()->Arguments())
   {
-    auto backedge = dynamic_cast<BackEdgeArgument *>(arg);
+    auto var = loop->mapArgument(*arg);
+    auto backedge = std::get_if<LoopNode::BackEdgeVar>(&var);
     if (!backedge)
     {
       continue;
@@ -449,7 +465,7 @@ CreateLoopFrontier(
     // this comes from somewhere inside the loop
     output_cycles[arg] = 0;
     frontier.insert(&arg->SingleUser());
-    stream_backedges.insert(backedge->result());
+    stream_backedges.insert(backedge->post);
   }
 }
 
@@ -463,7 +479,7 @@ static void
 PushCycleFrontier(
     std::unordered_map<rvsdg::Output *, size_t> & output_cycles,
     std::unordered_set<rvsdg::Input *> & frontier,
-    std::unordered_set<BackEdgeResult *> & stream_backedges,
+    std::unordered_set<rvsdg::Input *> & stream_backedges,
     std::unordered_set<rvsdg::SimpleNode *> & top_muxes)
 {
   bool changed = false;
@@ -472,116 +488,150 @@ PushCycleFrontier(
     changed = false;
     for (auto in : frontier)
     {
-      if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*in))
-      {
-        bool all_contained = true;
-        for (size_t i = 0; i < simpleNode->ninputs(); ++i)
-        {
-          auto f = frontier.find(simpleNode->input(i));
-          if (f == frontier.end())
+      bool inner_break = false;
+      rvsdg::MatchVariant(
+          in->GetOwner(),
+          [&](rvsdg::Node * node)
           {
-            all_contained = false;
-          }
-        }
-        if (!all_contained)
-          continue;
-        // all inputs of node are in frontier - move them forward
-        std::vector<size_t> input_cycles;
-        for (size_t i = 0; i < simpleNode->ninputs(); ++i)
-        {
-          input_cycles.push_back(output_cycles[simpleNode->input(i)->origin()]);
-          frontier.erase(simpleNode->input(i));
-        }
-        std::vector<size_t> out_cycles = NodeCycles(simpleNode, input_cycles);
+            rvsdg::MatchTypeOrFail(
+                *node,
+                [&](rvsdg::SimpleNode & simpleNode)
+                {
+                  bool all_contained = true;
+                  for (auto & input : simpleNode.Inputs())
+                  {
+                    auto f = frontier.find(&input);
+                    if (f == frontier.end())
+                    {
+                      all_contained = false;
+                    }
+                  }
+                  if (all_contained)
+                  {
+                    // all inputs of node are in frontier - move them forward
+                    std::vector<size_t> input_cycles;
+                    for (auto & input : simpleNode.Inputs())
+                    {
+                      input_cycles.push_back(output_cycles[input.origin()]);
+                      frontier.erase(&input);
+                    }
+                    std::vector<size_t> out_cycles = NodeCycles(&simpleNode, input_cycles);
 
-        if (top_muxes.find(simpleNode) != top_muxes.end())
-        {
-          if (dynamic_cast<const MuxOperation *>(&simpleNode->GetOperation()))
+                    if (top_muxes.find(&simpleNode) != top_muxes.end())
+                    {
+                      if (dynamic_cast<const MuxOperation *>(&simpleNode.GetOperation()))
+                      {
+                        // TODO: do this in NodeCycles instead?
+                        // this works for most cases, but is not ideal if the backedge has an II >
+                        // 1, and the predicate hasn't
+                        auto pred_latency = output_cycles[simpleNode.input(0)->origin()];
+                        auto input_latency = output_cycles[simpleNode.input(1)->origin()];
+                        auto backedge_latency = output_cycles[simpleNode.input(2)->origin()];
+                        auto out_latency = backedge_latency - pred_latency + input_latency;
+                        std::cout << "top_mux " << &simpleNode << " pred latency: " << pred_latency
+                                  << " input latency: " << input_latency
+                                  << " backedge latency: " << backedge_latency
+                                  << " out latency: " << out_latency << std::endl;
+                        output_cycles[simpleNode.output(0)] = out_latency;
+                      }
+                      else
+                      {
+                        JLM_ASSERT(
+                            rvsdg::is<LoopConstantBufferOperation>(simpleNode.GetOperation()));
+                        // don't update output cycles
+                      }
+                    }
+                    else
+                    {
+                      for (size_t i = 0; i < simpleNode.noutputs(); ++i)
+                      {
+                        auto out = simpleNode.output(i);
+                        output_cycles[out] = out_cycles[i];
+                        frontier.insert(&out->SingleUser());
+                      }
+                    }
+                    changed = true;
+                    inner_break = true;
+                  }
+                },
+                [&](LoopNode & inner_loop)
+                {
+                  bool all_contained = true;
+                  for (auto & input : inner_loop.Inputs())
+                  {
+                    auto f = frontier.find(&input);
+                    if (f == frontier.end())
+                    {
+                      all_contained = false;
+                    }
+                  }
+                  if (all_contained)
+                  {
+                    for (auto & input : inner_loop.Inputs())
+                    {
+                      frontier.erase(&input);
+                    }
+                    // TODO: do we just want the latency of a single iteration here?
+                    CalculateLoopCycleDepth(&inner_loop, output_cycles, true);
+                    for (size_t i = 0; i < inner_loop.noutputs(); ++i)
+                    {
+                      std::cout << "output latency " << i << " "
+                                << output_cycles[inner_loop.output(i)] << std::endl;
+                      frontier.insert(&inner_loop.output(i)->SingleUser());
+                    }
+                    changed = true;
+                    inner_break = true;
+                  }
+                });
+          },
+          [&](rvsdg::Region * region)
           {
-            // TODO: do this in NodeCycles instead?
-            // this works for most cases, but is not ideal if the backedge has an II > 1, and the
-            // predicate hasn't
-            auto pred_latency = output_cycles[simpleNode->input(0)->origin()];
-            auto input_latency = output_cycles[simpleNode->input(1)->origin()];
-            auto backedge_latency = output_cycles[simpleNode->input(2)->origin()];
-            auto out_latency = backedge_latency - pred_latency + input_latency;
-            std::cout << "top_mux " << simpleNode << " pred latency: " << pred_latency
-                      << " input latency: " << input_latency
-                      << " backedge latency: " << backedge_latency
-                      << " out latency: " << out_latency << std::endl;
-            output_cycles[simpleNode->output(0)] = out_latency;
-          }
-          else
-          {
-            JLM_ASSERT(rvsdg::is<LoopConstantBufferOperation>(simpleNode->GetOperation()));
-            // don't update output cycles
-          }
-        }
-        else
-        {
-          for (size_t i = 0; i < simpleNode->noutputs(); ++i)
-          {
-            auto out = simpleNode->output(i);
-            output_cycles[out] = out_cycles[i];
-            frontier.insert(&out->SingleUser());
-          }
-        }
-        changed = true;
+            rvsdg::MatchTypeOrFail(
+                *region->node(),
+                [&](LoopNode & loop)
+                {
+                  rvsdg::MatchVariant(
+                      loop.mapResult(*in),
+                      [&](const LoopNode::BackEdgeVar & backedge)
+                      {
+                        frontier.erase(in);
+                        auto out = backedge.pre;
+                        if (stream_backedges.find(in) == stream_backedges.end())
+                        {
+                          // skip stream backedges
+                          output_cycles[out] = output_cycles[in->origin()];
+                          frontier.insert(&out->SingleUser());
+                        }
+                        changed = true;
+                        inner_break = true;
+                      },
+                      [&](const LoopNode::ExitVar & exit)
+                      {
+                        frontier.erase(in);
+                        auto out = exit.output;
+                        JLM_ASSERT(out);
+                        output_cycles[out] = output_cycles[in->origin()];
+                        // don't continue frontier out of loop
+                        changed = true;
+                        inner_break = true;
+                      });
+                },
+                [&](rvsdg::StructuralNode &)
+                {
+                  // FIXME: at some point need to be very specific about
+                  // the kind of structural node.
+                  auto rr = dynamic_cast<rvsdg::RegionResult *>(in);
+                  frontier.erase(in);
+                  auto out = rr->output();
+                  JLM_ASSERT(out);
+                  output_cycles[out] = output_cycles[in->origin()];
+                  // don't continue frontier out of loop
+                  changed = true;
+                  inner_break = true;
+                });
+          });
+      if (inner_break)
         break;
-      }
-      else if (auto be = dynamic_cast<BackEdgeResult *>(in))
-      {
-        frontier.erase(in);
-        auto out = be->argument();
-        if (stream_backedges.find(be) == stream_backedges.end())
-        {
-          // skip stream backedges
-          output_cycles[out] = output_cycles[in->origin()];
-          frontier.insert(&out->SingleUser());
-        }
-        changed = true;
-        break;
-      }
-      else if (auto rr = dynamic_cast<rvsdg::RegionResult *>(in))
-      {
-        frontier.erase(in);
-        auto out = rr->output();
-        JLM_ASSERT(out);
-        output_cycles[out] = output_cycles[in->origin()];
-        // don't continue frontier out of loop
-        changed = true;
-        break;
-      }
-      else
-      {
-        auto inner_loop = rvsdg::TryGetOwnerNode<LoopNode>(*in);
-        JLM_ASSERT(inner_loop);
-        bool all_contained = true;
-        for (size_t i = 0; i < inner_loop->ninputs(); ++i)
-        {
-          auto f = frontier.find(inner_loop->input(i));
-          if (f == frontier.end())
-          {
-            all_contained = false;
-          }
-        }
-        if (!all_contained)
-          continue;
-        for (size_t i = 0; i < inner_loop->ninputs(); ++i)
-        {
-          frontier.erase(inner_loop->input(i));
-        }
-        // TODO: do we just want the latency of a single iteration here?
-        CalculateLoopCycleDepth(inner_loop, output_cycles, true);
-        for (size_t i = 0; i < inner_loop->noutputs(); ++i)
-        {
-          std::cout << "output latency " << i << " " << output_cycles[inner_loop->output(i)]
-                    << std::endl;
-          frontier.insert(&inner_loop->output(i)->SingleUser());
-        }
-        changed = true;
-        break;
-      }
     }
   } while (changed);
   // TODO: is "changed" even necessary or can we just wait for frontier to be empty?
@@ -612,7 +662,7 @@ CalculateLoopCycleDepth(
     }
   }
   std::unordered_set<rvsdg::Input *> frontier;
-  std::unordered_set<BackEdgeResult *> stream_backedges;
+  std::unordered_set<rvsdg::Input *> stream_backedges;
   std::unordered_set<rvsdg::SimpleNode *> top_muxes;
   CreateLoopFrontier(loop, output_cycles, frontier, stream_backedges, top_muxes);
   std::unordered_set<rvsdg::Input *> frontier2(frontier);
@@ -735,7 +785,7 @@ AdjustLoopBuffers(
     }
   }
   std::unordered_set<rvsdg::Input *> frontier;
-  std::unordered_set<BackEdgeResult *> stream_backedges;
+  std::unordered_set<rvsdg::Input *> stream_backedges;
   std::unordered_set<rvsdg::SimpleNode *> top_muxes;
   CreateLoopFrontier(loop, buffer_capacity, frontier, stream_backedges, top_muxes);
   // set buffer capacity for constant nodes to max
@@ -776,143 +826,182 @@ AdjustLoopBuffers(
     changed = false;
     for (auto in : frontier)
     {
-      if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*in))
-      {
-        bool all_contained = true;
-        for (size_t i = 0; i < simpleNode->ninputs(); ++i)
-        {
-          auto f = frontier.find(simpleNode->input(i));
-          if (f == frontier.end())
-          {
-            all_contained = false;
-          }
-        }
-        if (!all_contained)
-          continue;
-        // all inputs of node are in frontier - move them forward
-        size_t max_cycles = 0;
-        for (size_t i = 0; i < simpleNode->ninputs(); ++i)
-        {
-          max_cycles = std::max(max_cycles, output_cycles[simpleNode->input(i)->origin()]);
-          frontier.erase(simpleNode->input(i));
-        }
+      bool inner_break = false;
 
-        std::vector<size_t> input_capacities;
-        // adjust capacities
-        for (size_t i = 0; i < simpleNode->ninputs(); ++i)
-        {
-          auto capacity = buffer_capacity[simpleNode->input(i)->origin()];
-          if (!analyze_inner_loop && (!rvsdg::is<AddressQueueOperation>(simpleNode))
-              && capacity < max_cycles)
+      rvsdg::MatchVariant(
+          in->GetOwner(),
+          [&](rvsdg::Node * node)
           {
-            size_t capacity_diff = max_cycles - capacity;
-            capacity += PlaceBufferLoop(simpleNode->input(i)->origin(), capacity_diff, true);
-            buffer_capacity[simpleNode->input(i)->origin()] = capacity;
-          }
-          input_capacities.push_back(capacity);
-        }
+            rvsdg::MatchTypeOrFail(
+                *node,
+                [&](rvsdg::SimpleNode & simpleNode)
+                {
+                  bool all_contained = true;
+                  for (auto & input : simpleNode.Inputs())
+                  {
+                    auto f = frontier.find(&input);
+                    if (f == frontier.end())
+                    {
+                      all_contained = false;
+                    }
+                  }
+                  if (all_contained)
+                  {
+                    // all inputs of node are in frontier - move them forward
+                    size_t max_cycles = 0;
+                    for (auto & input : simpleNode.Inputs())
+                    {
+                      max_cycles = std::max(max_cycles, output_cycles[input.origin()]);
+                      frontier.erase(&input);
+                    }
 
-        if (top_muxes.find(simpleNode) != top_muxes.end())
-        {
-          // we reached our starting point again
-          auto mux = dynamic_cast<const MuxOperation *>(&simpleNode->GetOperation());
-          if (mux)
-          {
-            std::cout << "top_mux " << simpleNode
-                      << " pred capacity: " << buffer_capacity[simpleNode->input(0)->origin()]
-                      << " backedge capacity: " << buffer_capacity[simpleNode->input(2)->origin()]
-                      << std::endl;
-          }
-        }
-        else
-        {
-          std::vector<size_t> out_capacities = NodeCapacity(simpleNode, input_capacities);
-          for (size_t i = 0; i < simpleNode->noutputs(); ++i)
-          {
-            auto out = simpleNode->output(i);
-            buffer_capacity[out] = out_capacities[i];
-            JLM_ASSERT(analyze_inner_loop || buffer_capacity[out] >= output_cycles[out]);
-            frontier.insert(&out->SingleUser());
-          }
-        }
-        changed = true;
-        break;
-      }
-      else if (auto be = dynamic_cast<BackEdgeResult *>(in))
-      {
-        frontier.erase(in);
-        auto out = be->argument();
-        buffer_capacity[out] = buffer_capacity[in->origin()];
-        if (stream_backedges.find(be) == stream_backedges.end())
-        {
-          frontier.insert(&out->SingleUser());
-        }
-        changed = true;
-        break;
-      }
-      else if (auto rr = dynamic_cast<rvsdg::RegionResult *>(in))
-      {
-        frontier.erase(in);
-        auto out = rr->output();
-        JLM_ASSERT(out);
-        buffer_capacity[out] = buffer_capacity[in->origin()];
-        // don't continue frontier out of loop
-        changed = true;
-        break;
-      }
-      else
-      {
-        auto inner_loop = rvsdg::TryGetOwnerNode<LoopNode>(*in);
-        JLM_ASSERT(inner_loop);
-        bool all_contained = true;
-        for (size_t i = 0; i < inner_loop->ninputs(); ++i)
-        {
-          auto f = frontier.find(inner_loop->input(i));
-          if (f == frontier.end())
-          {
-            all_contained = false;
-          }
-        }
-        if (!all_contained)
-          continue;
-        // all inputs of node are in frontier - move them forward
-        size_t max_cycles = 0;
-        for (size_t i = 0; i < inner_loop->ninputs(); ++i)
-        {
-          max_cycles = std::max(max_cycles, output_cycles[inner_loop->input(i)->origin()]);
-          frontier.erase(inner_loop->input(i));
-        }
-        // adjust capacities
-        for (size_t i = 0; i < inner_loop->ninputs(); ++i)
-        {
-          auto capacity = buffer_capacity[inner_loop->input(i)->origin()];
-          if (!analyze_inner_loop && capacity < max_cycles)
-          {
-            auto user = &inner_loop->input(i)->arguments.begin().ptr()->SingleUser();
-            auto [muxNode, muxOperation] =
-                rvsdg::TryGetSimpleNodeAndOptionalOp<MuxOperation>(*user);
-            if ((muxOperation && muxOperation->loop)
-                || rvsdg::IsOwnerNodeOperation<LoopConstantBufferOperation>(*user))
-            {
-              size_t capacity_diff = max_cycles - capacity;
-              capacity += PlaceBufferLoop(inner_loop->input(i)->origin(), capacity_diff, true);
-              buffer_capacity[inner_loop->input(i)->origin()] = capacity;
-            }
-            else
-            {
-              // don't put buffers on decouples, streams, and addrq stuff
-            }
-          }
-        }
+                    std::vector<size_t> input_capacities;
+                    // adjust capacities
+                    for (auto & input : simpleNode.Inputs())
+                    {
+                      auto capacity = buffer_capacity[input.origin()];
+                      if (!analyze_inner_loop && (!rvsdg::is<AddressQueueOperation>(&simpleNode))
+                          && capacity < max_cycles)
+                      {
+                        size_t capacity_diff = max_cycles - capacity;
+                        capacity += PlaceBufferLoop(input.origin(), capacity_diff, true);
+                        buffer_capacity[input.origin()] = capacity;
+                      }
+                      input_capacities.push_back(capacity);
+                    }
 
-        AdjustLoopBuffers(inner_loop, output_cycles, buffer_capacity, true);
-        for (size_t i = 0; i < inner_loop->noutputs(); ++i)
-        {
-          frontier.insert(&inner_loop->output(i)->SingleUser());
-        }
-        changed = true;
+                    if (top_muxes.find(&simpleNode) != top_muxes.end())
+                    {
+                      // we reached our starting point again
+                      auto mux = dynamic_cast<const MuxOperation *>(&simpleNode.GetOperation());
+                      if (mux)
+                      {
+                        std::cout << "top_mux " << &simpleNode << " pred capacity: "
+                                  << buffer_capacity[simpleNode.input(0)->origin()]
+                                  << " backedge capacity: "
+                                  << buffer_capacity[simpleNode.input(2)->origin()] << std::endl;
+                      }
+                    }
+                    else
+                    {
+                      std::vector<size_t> out_capacities =
+                          NodeCapacity(&simpleNode, input_capacities);
+                      for (size_t i = 0; i < simpleNode.noutputs(); ++i)
+                      {
+                        auto out = simpleNode.output(i);
+                        buffer_capacity[out] = out_capacities[i];
+                        JLM_ASSERT(
+                            analyze_inner_loop || buffer_capacity[out] >= output_cycles[out]);
+                        frontier.insert(&out->SingleUser());
+                      }
+                    }
+                    changed = true;
+                    inner_break = true;
+                  }
+                },
+                [&](LoopNode & inner_loop)
+                {
+                  bool all_contained = true;
+                  for (auto & input : inner_loop.Inputs())
+                  {
+                    auto f = frontier.find(&input);
+                    if (f == frontier.end())
+                    {
+                      all_contained = false;
+                    }
+                  }
+                  if (all_contained)
+                  {
+                    // all inputs of node are in frontier - move them forward
+                    size_t max_cycles = 0;
+                    for (auto & input : inner_loop.Inputs())
+                    {
+                      max_cycles = std::max(max_cycles, output_cycles[input.origin()]);
+                      frontier.erase(&input);
+                    }
+                    // adjust capacities
+                    for (size_t i = 0; i < inner_loop.ninputs(); ++i)
+                    {
+                      auto capacity = buffer_capacity[inner_loop.input(i)->origin()];
+                      if (!analyze_inner_loop && capacity < max_cycles)
+                      {
+                        auto user = &inner_loop.input(i)->arguments.begin().ptr()->SingleUser();
+                        auto [muxNode, muxOperation] =
+                            rvsdg::TryGetSimpleNodeAndOptionalOp<MuxOperation>(*user);
+                        if ((muxOperation && muxOperation->loop)
+                            || rvsdg::IsOwnerNodeOperation<LoopConstantBufferOperation>(*user))
+                        {
+                          size_t capacity_diff = max_cycles - capacity;
+                          capacity +=
+                              PlaceBufferLoop(inner_loop.input(i)->origin(), capacity_diff, true);
+                          buffer_capacity[inner_loop.input(i)->origin()] = capacity;
+                        }
+                        else
+                        {
+                          // don't put buffers on decouples, streams, and addrq stuff
+                        }
+                      }
+                    }
+
+                    AdjustLoopBuffers(&inner_loop, output_cycles, buffer_capacity, true);
+                    for (size_t i = 0; i < inner_loop.noutputs(); ++i)
+                    {
+                      frontier.insert(&inner_loop.output(i)->SingleUser());
+                    }
+                    changed = true;
+                    inner_break = true;
+                  }
+                });
+          },
+          [&](rvsdg::Region * region)
+          {
+            rvsdg::MatchTypeOrFail(
+                *region->node(),
+                [&](LoopNode & loop)
+                {
+                  rvsdg::MatchVariant(
+                      loop.mapResult(*in),
+                      [&](const LoopNode::BackEdgeVar & backedge)
+                      {
+                        frontier.erase(in);
+                        auto out = backedge.pre;
+                        buffer_capacity[out] = buffer_capacity[in->origin()];
+                        if (stream_backedges.find(in) == stream_backedges.end())
+                        {
+                          frontier.insert(&out->SingleUser());
+                        }
+                        changed = true;
+                        inner_break = true;
+                      },
+                      [&](const LoopNode::ExitVar & exit)
+                      {
+                        frontier.erase(in);
+                        auto out = exit.output;
+                        JLM_ASSERT(out);
+                        buffer_capacity[out] = buffer_capacity[in->origin()];
+                        // don't continue frontier out of loop
+                        changed = true;
+                        inner_break = true;
+                      }
+
+                  );
+                },
+                [&](rvsdg::StructuralNode &)
+                {
+                  auto rr = dynamic_cast<rvsdg::RegionResult *>(in);
+                  {
+                    frontier.erase(in);
+                    auto out = rr->output();
+                    JLM_ASSERT(out);
+                    buffer_capacity[out] = buffer_capacity[in->origin()];
+                    // don't continue frontier out of loop
+                    changed = true;
+                    inner_break = true;
+                  }
+                });
+          });
+      if (inner_break)
         break;
-      }
     }
   } while (changed);
   // TODO: is "changed" even necessary or can we just wait for frontier to be empty?

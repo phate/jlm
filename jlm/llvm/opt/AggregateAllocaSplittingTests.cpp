@@ -30,6 +30,42 @@ assertAllocaWithType(const jlm::rvsdg::Output & output, const jlm::rvsdg::Type &
   EXPECT_EQ(*allocaOperation->allocatedType(), type);
 }
 
+TEST(AggregateAllocaSplittingTests, emptyStructIsNotSplit)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::util;
+
+  // Arrange
+  const auto bit32Type = BitType::Create(32);
+  const auto emptyStruct = StructType::CreateIdentified({}, false);
+  const auto nonEmptyStruct = StructType::CreateIdentified({ bit32Type }, false);
+  const auto nestedEmptyStruct =
+      StructType::CreateIdentified({ nonEmptyStruct, emptyStruct }, false);
+  const auto memoryStateType = MemoryStateType::Create();
+  const auto functionType = FunctionType::Create({}, { memoryStateType });
+
+  // Act & Assert
+  for (const auto & structType : { emptyStruct, nestedEmptyStruct })
+  {
+    LlvmRvsdgModule rvsdgModule(FilePath(""), "", "");
+    auto lambdaNode = LambdaNode::Create(
+        rvsdgModule.Rvsdg().GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
+    auto & oneNode = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 1);
+    auto & allocaNode = AllocaOperation::createNode(structType, *oneNode.output(0), 4);
+    auto lambdaOutput =
+        lambdaNode->finalize({ &AllocaOperation::getMemoryStateOutput(allocaNode) });
+    GraphExport::Create(*lambdaOutput, "f");
+
+    StatisticsCollector statisticsCollector;
+    AggregateAllocaSplitting aggregateAllocaSplitting;
+    aggregateAllocaSplitting.Run(rvsdgModule, statisticsCollector);
+
+    assertAllocaWithType(*lambdaNode->GetFunctionResults()[0]->origin(), *structType);
+  }
+}
+
 TEST(AggregateAllocaSplittingTests, getElementPtrTest)
 {
   using namespace jlm::llvm;
@@ -290,13 +326,15 @@ TEST(AggregateAllocaSplittingTests, thetaTest)
   // Assert
   // Check gep0
   {
-    const auto & tracedOutput = traceOutput(*StoreOperation::AddressInput(*storeGep0Node).origin());
+    const auto & tracedOutput =
+        traceOutput(*StoreOperation::AddressInput(*storeGep0Node).origin(), false);
     assertAllocaWithType(tracedOutput, *bit16Type);
   }
 
   // Check gep1
   {
-    const auto & tracedOutput = traceOutput(*StoreOperation::AddressInput(storeGep1Node).origin());
+    const auto & tracedOutput =
+        traceOutput(*StoreOperation::AddressInput(storeGep1Node).origin(), false);
     assertAllocaWithType(tracedOutput, *bit32Type);
   }
 
@@ -447,49 +485,49 @@ TEST(AggregateAllocaSplittingTest, nestedStructTest)
   // gepBit8
   {
     const auto & tracedOutput =
-        traceOutput(*StoreOperation::AddressInput(*storeGepBit8Node).origin());
+        traceOutput(*StoreOperation::AddressInput(*storeGepBit8Node).origin(), false);
     assertAllocaWithType(tracedOutput, *bit8Type);
   }
 
   // gepBit12
   {
     const auto & tracedOutput =
-        traceOutput(*StoreOperation::AddressInput(*storeGepBit12Node).origin());
+        traceOutput(*StoreOperation::AddressInput(*storeGepBit12Node).origin(), false);
     assertAllocaWithType(tracedOutput, *bit12Type);
   }
 
   // gepBit16
   {
     const auto & tracedOutput =
-        traceOutput(*StoreOperation::AddressInput(*storeGepBit16Node).origin());
+        traceOutput(*StoreOperation::AddressInput(*storeGepBit16Node).origin(), false);
     assertAllocaWithType(tracedOutput, *bit16Type);
   }
 
   // gepBit20
   {
     const auto & tracedOutput =
-        traceOutput(*StoreOperation::AddressInput(*storeGepBit20Node).origin());
+        traceOutput(*StoreOperation::AddressInput(*storeGepBit20Node).origin(), false);
     assertAllocaWithType(tracedOutput, *bit20Type);
   }
 
   // gepBit32
   {
     const auto & tracedOutput =
-        traceOutput(*StoreOperation::AddressInput(*storeGepBit32Node).origin());
+        traceOutput(*StoreOperation::AddressInput(*storeGepBit32Node).origin(), false);
     assertAllocaWithType(tracedOutput, *bit32Type);
   }
 
   // gepBit64
   {
     const auto & tracedOutput =
-        traceOutput(*StoreOperation::AddressInput(*storeGepBit64Node).origin());
+        traceOutput(*StoreOperation::AddressInput(*storeGepBit64Node).origin(), false);
     assertAllocaWithType(tracedOutput, *bit64Type);
   }
 
   // gepBit128
   {
     const auto & tracedOutput =
-        traceOutput(*StoreOperation::AddressInput(*storeGepBit128Node).origin());
+        traceOutput(*StoreOperation::AddressInput(*storeGepBit128Node).origin(), false);
     assertAllocaWithType(tracedOutput, *bit128Type);
   }
 
@@ -552,5 +590,5 @@ TEST(AggregateAllocaSplittingTests, allocaWithCountBiggerThanOne)
   // Assert
   // We expect that the GetElementPtrOperation node was not replaced as it has a count that is
   // bigger than one.
-  EXPECT_TRUE(Region::ContainsOperation<GetElementPtrOperation>(*lambdaNode->subregion(), false));
+  EXPECT_TRUE(Region::containsOperation<GetElementPtrOperation>(*lambdaNode->subregion(), false));
 }

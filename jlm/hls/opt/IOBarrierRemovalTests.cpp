@@ -10,7 +10,7 @@
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 
 TEST(IOBarrierRemovalTests, IOBarrierRemoval)
 {
@@ -50,5 +50,5 @@ TEST(IOBarrierRemovalTests, IOBarrierRemoval)
   ioBarrierRemoval.Run(rvsdgModule, statisticsCollector);
 
   // Assert
-  EXPECT_FALSE(Region::ContainsOperation<IOBarrierOperation>(rvsdg.GetRootRegion(), true));
+  EXPECT_FALSE(Region::containsOperation<IOBarrierOperation>(rvsdg.GetRootRegion(), true));
 }

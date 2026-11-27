@@ -147,6 +147,48 @@ private:
 };
 
 /**
+ * Represents a control constant with undefined value.
+ *
+ * This operation is useful for predicate region tracing where the compiler statically knows
+ * that a given region can never be executed in order to reach a given value. It uses then
+ * this operation to indicate to the tracer that it can ignore the region under examination,
+ * potentially leading to more precise tracing results.
+ *
+ * \see AlternativeRegionPredicateTracer
+ */
+class UndefControlConstantOperation final : public NullaryOperation
+{
+public:
+  ~UndefControlConstantOperation() noexcept override;
+
+  explicit UndefControlConstantOperation(const size_t numAlternatives)
+      : NullaryOperation(ControlType::Create(numAlternatives))
+  {}
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  [[nodiscard]] size_t
+  numAlternatives() const noexcept
+  {
+    JLM_ASSERT(std::dynamic_pointer_cast<const ControlType>(result(0)));
+    return std::static_pointer_cast<const ControlType>(result(0))->nalternatives();
+  }
+
+  static Node &
+  createNode(Region & region, const size_t numAlternatives)
+  {
+    return CreateOpNode<UndefControlConstantOperation>(region, numAlternatives);
+  }
+};
+
+/**
  * Match operator
  * Converts an n-bit integer input into a value of type ControlType.
  * The ControlType has a given number of alternative values, which are indexed starting at 0.

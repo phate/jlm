@@ -39,10 +39,10 @@ TestFoldConstants(const FoldConstantsTestInput & input)
 
   auto & c1 = IntegerConstantOperation::Create(
       graph.GetRootRegion(),
-      BitValueRepresentation(input.numBitsC1, input.c1));
+      IntegerValueRepresentation(input.numBitsC1, input.c1));
   auto & c2 = IntegerConstantOperation::Create(
       graph.GetRootRegion(),
-      BitValueRepresentation(input.numBitsC2, input.c2));
+      IntegerValueRepresentation(input.numBitsC2, input.c2));
 
   auto & node1 = Operation::createNode(32, *c1.output(0), *c2.output(0));
 
@@ -63,6 +63,47 @@ TestFoldConstants(const FoldConstantsTestInput & input)
     EXPECT_TRUE(op);
     EXPECT_EQ(op->Representation().to_int(), input.expected);
     EXPECT_EQ(op->Representation().nbits(), static_cast<size_t>(input.numBitsExpected));
+  }
+}
+
+template<typename Operation>
+static void
+testNormalizeIdenticalOperands(const std::uint64_t expected)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  auto iType = BitType::Create(32);
+
+  Graph graph;
+
+  auto & i0 = GraphImport::Create(graph, iType, "i0");
+  auto & i1 = GraphImport::Create(graph, iType, "i1");
+
+  auto & node1 = Operation::createNode(32, i0, i0);
+  auto & node2 = Operation::createNode(32, i0, i1);
+
+  auto & x1 = GraphExport::Create(*node1.output(0), "x1");
+  auto & x2 = GraphExport::Create(*node2.output(0), "x2");
+
+  // Act
+  ReduceNode<Operation>(Operation::normalizeIdenticalOperands, dynamic_cast<SimpleNode &>(node1));
+  ReduceNode<Operation>(Operation::normalizeIdenticalOperands, dynamic_cast<SimpleNode &>(node2));
+
+  graph.PruneNodes();
+
+  // Assert
+  {
+    auto [_, op] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*x1.origin());
+    EXPECT_TRUE(op);
+    EXPECT_EQ(op->Representation().nbits(), 1u);
+    EXPECT_EQ(op->Representation().to_uint(), expected);
+  }
+
+  {
+    auto [node, op] = TryGetSimpleNodeAndOptionalOp<Operation>(*x2.origin());
+    EXPECT_TRUE(op);
+    EXPECT_EQ(node, &node2);
   }
 }
 
@@ -133,6 +174,55 @@ TEST(IntegerOrOperationTest, foldConstants)
   TestFoldConstants<IntegerOrOperation>({ 1, 32, 2, 32, 3, 32 });
 }
 
+TEST(IntegerOrOperationTest, normalizeIdempotent)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  auto i32Type = BitType::Create(32);
+
+  Graph graph;
+
+  auto & i0 = GraphImport::Create(graph, i32Type, "i0");
+
+  auto & zeroNode = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
+  auto & oneNode = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 1);
+
+  auto & subNode1 = IntegerOrOperation::createNode(32, i0, *zeroNode.output(0));
+  auto & subNode2 = IntegerOrOperation::createNode(32, *zeroNode.output(0), i0);
+  auto & subNode3 = IntegerOrOperation::createNode(32, i0, *oneNode.output(0));
+  auto & subNode4 = IntegerOrOperation::createNode(32, *oneNode.output(0), i0);
+
+  auto & x1 = GraphExport::Create(*subNode1.output(0), "x1");
+  auto & x2 = GraphExport::Create(*subNode2.output(0), "x2");
+  auto & x3 = GraphExport::Create(*subNode3.output(0), "x3");
+  auto & x4 = GraphExport::Create(*subNode4.output(0), "x4");
+
+  // Act
+  ReduceNode<IntegerOrOperation>(
+      IntegerOrOperation::normalizeIdempotent,
+      dynamic_cast<SimpleNode &>(subNode1));
+  ReduceNode<IntegerOrOperation>(
+      IntegerOrOperation::normalizeIdempotent,
+      dynamic_cast<SimpleNode &>(subNode2));
+  ReduceNode<IntegerOrOperation>(
+      IntegerOrOperation::normalizeIdempotent,
+      dynamic_cast<SimpleNode &>(subNode3));
+  ReduceNode<IntegerOrOperation>(
+      IntegerOrOperation::normalizeIdempotent,
+      dynamic_cast<SimpleNode &>(subNode4));
+
+  graph.PruneNodes();
+
+  view(graph, stdout);
+
+  // Assert
+  EXPECT_EQ(x1.origin(), &i0);
+  EXPECT_EQ(x2.origin(), &i0);
+  EXPECT_EQ(x3.origin(), subNode3.output(0));
+  EXPECT_EQ(x4.origin(), subNode4.output(0));
+}
+
 TEST(IntegerAndOperationTest, foldConstants)
 {
   TestFoldConstants<IntegerAndOperation>({ 4, 32, 4, 32, 4, 32 });
@@ -143,6 +233,84 @@ TEST(IntegerXorOperationTest, foldConstants)
 {
   TestFoldConstants<IntegerXorOperation>({ 4, 32, 4, 32, 0, 32 });
   TestFoldConstants<IntegerXorOperation>({ 0, 32, -1, 32, -1, 32 });
+}
+
+TEST(IntegerAddOperationTest, foldConstants)
+{
+  TestFoldConstants<IntegerAddOperation>({ 12, 32, 7, 32, 19, 32 });
+  TestFoldConstants<IntegerAddOperation>({ -1, 32, 2, 32, 1, 32 });
+}
+
+TEST(IntegerSubOperationTest, foldConstants)
+{
+  TestFoldConstants<IntegerSubOperation>({ 12, 32, 7, 32, 5, 32 });
+  TestFoldConstants<IntegerSubOperation>({ 0, 32, 1, 32, -1, 32 });
+}
+
+TEST(IntegerMulOperationTest, foldConstants)
+{
+  TestFoldConstants<IntegerMulOperation>({ 6, 32, 7, 32, 42, 32 });
+  TestFoldConstants<IntegerMulOperation>({ -6, 32, 7, 32, -42, 32 });
+}
+
+TEST(IntegerSDivOperationTest, foldConstants)
+{
+  TestFoldConstants<IntegerSDivOperation>({ -13, 32, 3, 32, -4, 32 });
+  TestFoldConstants<IntegerSDivOperation>({ 13, 32, -3, 32, -4, 32 });
+}
+
+TEST(IntegerUDivOperationTest, foldConstants)
+{
+  TestFoldConstants<IntegerUDivOperation>({ 13, 32, 3, 32, 4, 32 });
+  TestFoldConstants<IntegerUDivOperation>({ -1, 32, 2, 32, 2147483647, 32 });
+}
+
+TEST(IntegerSRemOperationTest, foldConstants)
+{
+  TestFoldConstants<IntegerSRemOperation>({ -13, 32, 3, 32, -1, 32 });
+  TestFoldConstants<IntegerSRemOperation>({ 13, 32, -3, 32, 1, 32 });
+}
+
+TEST(IntegerURemOperationTest, foldConstants)
+{
+  TestFoldConstants<IntegerURemOperation>({ 13, 32, 3, 32, 1, 32 });
+  TestFoldConstants<IntegerURemOperation>({ -1, 32, 10, 32, 5, 32 });
+}
+
+TEST(IntegerAShrOperationTest, foldConstants)
+{
+  TestFoldConstants<IntegerAShrOperation>({ -0x10, 32, 2, 32, -0x4, 32 });
+  TestFoldConstants<IntegerAShrOperation>({ 0x10, 32, 2, 32, 0x4, 32 });
+}
+
+TEST(IntegerShlOperationTest, foldConstants)
+{
+  TestFoldConstants<IntegerShlOperation>({ 0x3, 32, 2, 32, 0xc, 32 });
+  TestFoldConstants<IntegerShlOperation>({ 0x400, 32, 2, 32, 0x1000, 32 });
+}
+
+TEST(IntegerShlOperationTest, foldWideShiftAmount)
+{
+  using namespace jlm::rvsdg;
+  Graph graph;
+  auto & region = graph.GetRootRegion();
+  auto & value = IntegerConstantOperation::Create(region, 128, 1);
+  auto amount = IntegerValueRepresentation(128, 1).shl(100);
+  auto & shift = IntegerConstantOperation::Create(region, amount);
+  auto & node = IntegerShlOperation::createNode(128, *value.output(0), *shift.output(0));
+  auto result = IntegerShlOperation::foldConstants(
+      static_cast<const IntegerShlOperation &>(node.GetOperation()),
+      { value.output(0), shift.output(0) });
+  ASSERT_TRUE(result);
+  auto [_, operation] = TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*result->at(0));
+  ASSERT_TRUE(operation);
+  EXPECT_EQ(operation->Representation(), IntegerValueRepresentation(128, 0));
+}
+
+TEST(IntegerLShrOperationTest, foldConstants)
+{
+  TestFoldConstants<IntegerLShrOperation>({ -0x1, 32, 2, 32, 0x3fffffff, 32 });
+  TestFoldConstants<IntegerLShrOperation>({ 0x10, 32, 2, 32, 0x4, 32 });
 }
 
 TEST(IntegerSubOperationTests, normalizeAdditiveInverse)
@@ -183,6 +351,51 @@ TEST(IntegerSubOperationTests, normalizeAdditiveInverse)
     EXPECT_EQ(op->Representation().to_int(), 0u);
     EXPECT_EQ(op->Representation().nbits(), 32u);
   }
+}
+
+TEST(IntegerEqOperationTests, normalizeIdenticalOperands)
+{
+  testNormalizeIdenticalOperands<IntegerEqOperation>(1);
+}
+
+TEST(IntegerNeOperationTests, normalizeIdenticalOperands)
+{
+  testNormalizeIdenticalOperands<IntegerNeOperation>(0);
+}
+
+TEST(IntegerSgeOperationTests, normalizeIdenticalOperands)
+{
+  testNormalizeIdenticalOperands<IntegerSgeOperation>(1);
+}
+
+TEST(IntegerSgtOperationTests, normalizeIdenticalOperands)
+{
+  testNormalizeIdenticalOperands<IntegerSgtOperation>(0);
+}
+
+TEST(IntegerSleOperationTests, normalizeIdenticalOperands)
+{
+  testNormalizeIdenticalOperands<IntegerSleOperation>(1);
+}
+
+TEST(IntegerSltOperationTests, normalizeIdenticalOperands)
+{
+  testNormalizeIdenticalOperands<IntegerSltOperation>(0);
+}
+
+TEST(IntegerUgeOperationTests, normalizeIdenticalOperands)
+{
+  testNormalizeIdenticalOperands<IntegerUgeOperation>(1);
+}
+
+TEST(IntegerUgtOperationTests, normalizeIdenticalOperands)
+{
+  testNormalizeIdenticalOperands<IntegerUgtOperation>(0);
+}
+
+TEST(IntegerUltOperationTests, normalizeIdenticalOperands)
+{
+  testNormalizeIdenticalOperands<IntegerUltOperation>(0);
 }
 
 }

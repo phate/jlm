@@ -20,6 +20,7 @@
 #include <jlm/rvsdg/theta.hpp>
 
 #include <queue>
+#include <variant>
 
 namespace jlm::llvm::aa
 {
@@ -49,8 +50,8 @@ LocalAliasAnalysis::setMaxTraceCollectionSize(size_t maxTraceCollectionSize)
 AliasAnalysis::AliasQueryResponse
 LocalAliasAnalysis::Query(const rvsdg::Output & p1, size_t s1, const rvsdg::Output & p2, size_t s2)
 {
-  const auto & p1Norm = llvm::traceOutput(p1);
-  const auto & p2Norm = llvm::traceOutput(p2);
+  const auto & p1Norm = llvm::traceOutput(p1, true);
+  const auto & p2Norm = llvm::traceOutput(p2, true);
 
   // If the two pointers are the same value, they must alias
   if (&p1Norm == &p2Norm)
@@ -156,13 +157,26 @@ LocalAliasAnalysis::Query(const rvsdg::Output & p1, size_t s1, const rvsdg::Outp
   if (p1AllTopsOriginal && p2AllTopsOriginal)
     return NoAlias;
 
+  // If all top origins of a pointer are ALLOCAs, then the other pointer can discard all origins
+  // that are from arguments to the function
+  if (hasOnlyAllocaTopOrigins(p1TraceCollection))
+    removeArgumentTopOrigins(p2TraceCollection);
+  else if (hasOnlyAllocaTopOrigins(p2TraceCollection))
+    removeArgumentTopOrigins(p1TraceCollection);
+
+  // If one of the trace collections are empty, they can not alias
+  if (p1TraceCollection.TopOrigins.empty() || p2TraceCollection.TopOrigins.empty())
+    return NoAlias;
+
   // If one of the pointers has a top origin set containing only fully traceable ALLOCAs,
   // it is not possible for the other pointer to target any of them,
   // as they would already be explicitly included in its top origin set.
   const bool p1OnlyTraceable = HasOnlyFullyTraceableTopOrigins(p1TraceCollection);
-  const bool p2OnlyTraceable = HasOnlyFullyTraceableTopOrigins(p2TraceCollection);
+  if (p1OnlyTraceable)
+    return NoAlias;
 
-  if (p1OnlyTraceable || p2OnlyTraceable)
+  const bool p2OnlyTraceable = HasOnlyFullyTraceableTopOrigins(p2TraceCollection);
+  if (p2OnlyTraceable)
     return NoAlias;
 
   return MayAlias;
@@ -391,6 +405,40 @@ LocalAliasAnalysis::DoTraceCollectionsOverlap(
 }
 
 bool
+LocalAliasAnalysis::hasOnlyAllocaTopOrigins(const TraceCollection & traceCollection)
+{
+  for (auto [output, offset] : traceCollection.TopOrigins)
+  {
+    if (!rvsdg::IsOwnerNodeOperation<AllocaOperation>(*output))
+      return false;
+  }
+  return true;
+}
+
+void
+LocalAliasAnalysis::removeArgumentTopOrigins(TraceCollection & traceCollection)
+{
+  for (auto it = traceCollection.TopOrigins.begin(); it != traceCollection.TopOrigins.end();)
+  {
+    auto & output = *it->first;
+    auto lambda = rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(output);
+    if (lambda)
+    {
+      auto argument = lambda->MapArgument(output);
+      if (std::holds_alternative<rvsdg::LambdaNode::ArgumentVar>(argument))
+      {
+        // The output is a function argument, remove it
+        it = traceCollection.TopOrigins.erase(it);
+        continue;
+      }
+    }
+
+    // We did not remove this top origin, keep iterating
+    it++;
+  }
+}
+
+bool
 LocalAliasAnalysis::IsOriginalOriginFullyTraceable(const rvsdg::Output & pointer)
 {
   // The only original origins that can be fully traced for escaping are ALLOCAs
@@ -468,11 +516,11 @@ LocalAliasAnalysis::IsOriginalOriginFullyTraceable(const rvsdg::Output & pointer
       {
         bool do_continue = MatchTypeWithDefault(
             node->GetOperation(),
-            [&](const IOBarrierOperation &)
+            [&](const MemoryHoistBarrierOperation &)
             {
               // The pointer input must be the node's first input
               JLM_ASSERT(user.index() == 0);
-              Enqueue(*node->output(0));
+              Enqueue(MemoryHoistBarrierOperation::getAddressOutput(*node));
               return true;
             },
             [&](const GetElementPtrOperation &)

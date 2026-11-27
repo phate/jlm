@@ -4,9 +4,9 @@
  */
 
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
+#include <jlm/llvm/opt/LoopUnrolling.hpp>
 #include <jlm/llvm/opt/NodeReduction.hpp>
 #include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
-#include <jlm/llvm/opt/unroll.hpp>
 #include <jlm/tooling/CommandLine.hpp>
 
 #include <llvm/Support/CommandLine.h>
@@ -100,10 +100,12 @@ JlmOptCommandLineOptions::GetOptimizationIdCommandLineMap()
     { OptimizationId::FunctionInlining, "FunctionInlining" },
     { OptimizationId::IfConversion, "IfConversion" },
     { OptimizationId::InvariantValueRedirection, "InvariantValueRedirection" },
+    { OptimizationId::IOBarrierElimination, "IOBarrierElimination" },
     { OptimizationId::LoadChainSeparation, "LoadChainSeparation" },
     { OptimizationId::LoopStrengthReduction, "LoopStrengthReduction" },
     { OptimizationId::LoopUnrolling, "LoopUnrolling" },
     { OptimizationId::LoopUnswitching, "LoopUnswitching" },
+    { OptimizationId::NodeHoisting, "NodeHoisting" },
     { OptimizationId::NodePullIn, "NodePullIn" },
     { OptimizationId::NodePushOut, "NodePushOut" },
     { OptimizationId::NodeReduction, "NodeReduction" },
@@ -209,6 +211,7 @@ JlmOptCommandLineOptions::GetStatisticsIdCommandLineArguments()
     { util::Statistics::Id::FunctionInlining, "print-iln-stat" },
     { util::Statistics::Id::IfConversion, "print-if-conversion" },
     { util::Statistics::Id::InvariantValueRedirection, "printInvariantValueRedirection" },
+    { util::Statistics::Id::IOBarrierElimination, "print-io-barrier-elimination" },
     { util::Statistics::Id::JlmToRvsdgConversion, "print-jlm-rvsdg-conversion" },
     { util::Statistics::Id::LoopStrengthReduction, "print-loop-strength-reduction" },
     { util::Statistics::Id::LoopUnrolling, "print-unroll-stat" },
@@ -239,7 +242,7 @@ JlmOptCommandLineOptions::GetOutputFormatCommandLineArguments()
     { OutputFormat::Ascii, "ascii" }, { OutputFormat::Dot, "dot" },
     { OutputFormat::Json, "json" },   { OutputFormat::JsonTree, "jsonTree" },
     { OutputFormat::Llvm, "llvm" },   { OutputFormat::Mlir, "mlir" },
-    { OutputFormat::Tree, "tree" },
+    { OutputFormat::Tree, "tree" },   { OutputFormat::Null, "null" }
   };
 
   auto firstIndex = static_cast<size_t>(OutputFormat::FirstEnumValue);
@@ -309,13 +312,14 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
           JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
           JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
           JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware,
+          JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
           JlmOptCommandLineOptions::OptimizationId::StoreValueForwarding,
-          JlmOptCommandLineOptions::OptimizationId::LoadChainSeparation,
           JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination,
           JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
           JlmOptCommandLineOptions::OptimizationId::NodeReduction,
+          JlmOptCommandLineOptions::OptimizationId::IOBarrierElimination,
           JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
-          JlmOptCommandLineOptions::OptimizationId::NodePushOut,
+          JlmOptCommandLineOptions::OptimizationId::NodeHoisting,
           JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
           JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
           JlmOptCommandLineOptions::OptimizationId::NodeReduction,
@@ -634,7 +638,11 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
     CommandLineOptions_.Compilations_.push_back(
         { inputFilePath,
           mF.empty() ? ToDependencyFile(inputFilePath) : util::FilePath(mF),
-          ToObjectFile(inputFilePath),
+          noLinking ? ToObjectFile(inputFilePath)
+                    : util::FilePath::createUniqueFileName(
+                          util::FilePath::TempDirectoryPath(),
+                          inputFilePath.base() + "-",
+                          ".o"),
           mT.empty() ? ToObjectFile(inputFilePath).name() : mT,
           true,
           true,
@@ -827,7 +835,8 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
 #endif
           CreateOutputFormatOption(
               JlmOptCommandLineOptions::OutputFormat::Tree,
-              "Output Rvsdg Tree")),
+              "Output Rvsdg Tree"),
+          CreateOutputFormatOption(JlmOptCommandLineOptions::OutputFormat::Null, "Disable output")),
       cl::init(JlmOptCommandLineOptions::OutputFormat::Llvm));
 
   auto aAAndersenAgnostic = JlmOptCommandLineOptions::OptimizationId::AAAndersenAgnostic;
@@ -840,10 +849,12 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
   auto ifConversion = JlmOptCommandLineOptions::OptimizationId::IfConversion;
   auto invariantValueRedirection =
       JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection;
+  auto ioBarrierElimination = JlmOptCommandLineOptions::OptimizationId::IOBarrierElimination;
   auto loadChainSeparation = JlmOptCommandLineOptions::OptimizationId::LoadChainSeparation;
   auto loopStrengthReduction = JlmOptCommandLineOptions::OptimizationId::LoopStrengthReduction;
   auto loopUnrolling = JlmOptCommandLineOptions::OptimizationId::LoopUnrolling;
   auto loopUnswitching = JlmOptCommandLineOptions::OptimizationId::LoopUnswitching;
+  auto nodeHoisting = JlmOptCommandLineOptions::OptimizationId::NodeHoisting;
   auto nodePushOut = JlmOptCommandLineOptions::OptimizationId::NodePushOut;
   auto nodePullIn = JlmOptCommandLineOptions::OptimizationId::NodePullIn;
   auto nodeReduction = JlmOptCommandLineOptions::OptimizationId::NodeReduction;
@@ -887,6 +898,10 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               JlmOptCommandLineOptions::ToCommandLineArgument(invariantValueRedirection),
               "Invariant Value Redirection"),
           ::clEnumValN(
+              ioBarrierElimination,
+              JlmOptCommandLineOptions::ToCommandLineArgument(ioBarrierElimination),
+              "Eliminate IOBarrier nodes"),
+          ::clEnumValN(
               loadChainSeparation,
               JlmOptCommandLineOptions::ToCommandLineArgument(loadChainSeparation),
               "Separate chains of load operations"),
@@ -903,9 +918,13 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               JlmOptCommandLineOptions::ToCommandLineArgument(loopUnswitching),
               "Move conditionals outside loops"),
           ::clEnumValN(
+              nodeHoisting,
+              JlmOptCommandLineOptions::ToCommandLineArgument(nodeHoisting),
+              "Hoist nodes out of conditionals and loops."),
+          ::clEnumValN(
               nodePushOut,
               JlmOptCommandLineOptions::ToCommandLineArgument(nodePushOut),
-              "Node Push Out"),
+              "DEPRECATED - Use node hoisting instead."),
           ::clEnumValN(
               nodePullIn,
               JlmOptCommandLineOptions::ToCommandLineArgument(nodePullIn),

@@ -17,20 +17,21 @@
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/opt/CommonNodeElimination.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
+#include <jlm/llvm/opt/FunctionInlining.hpp>
 #include <jlm/llvm/opt/IfConversion.hpp>
-#include <jlm/llvm/opt/inlining.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
+#include <jlm/llvm/opt/IOBarrierElimination.hpp>
 #include <jlm/llvm/opt/LoadChainSeparation.hpp>
 #include <jlm/llvm/opt/LoopStrengthReduction.hpp>
+#include <jlm/llvm/opt/LoopUnrolling.hpp>
 #include <jlm/llvm/opt/LoopUnswitching.hpp>
+#include <jlm/llvm/opt/NodeHoisting.hpp>
 #include <jlm/llvm/opt/NodeReduction.hpp>
+#include <jlm/llvm/opt/NodeSinking.hpp>
 #include <jlm/llvm/opt/PredicateCorrelation.hpp>
-#include <jlm/llvm/opt/pull.hpp>
-#include <jlm/llvm/opt/push.hpp>
 #include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
 #include <jlm/llvm/opt/StoreValueForwarding.hpp>
-#include <jlm/llvm/opt/unroll.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/tooling/Command.hpp>
 #include <jlm/tooling/CommandPaths.hpp>
@@ -422,6 +423,8 @@ JlmOptCommand::CreateTransformation(JlmOptCommandLineOptions::OptimizationId opt
     return std::make_shared<llvm::FunctionInlining>();
   case JlmOptCommandLineOptions::OptimizationId::IfConversion:
     return std::make_shared<llvm::IfConversion>();
+  case JlmOptCommandLineOptions::OptimizationId::IOBarrierElimination:
+    return std::make_shared<llvm::IOBarrierElimination>();
   case JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection:
     return std::make_shared<llvm::InvariantValueRedirection>(
         llvm::InvariantValueRedirection::Configuration());
@@ -433,6 +436,8 @@ JlmOptCommand::CreateTransformation(JlmOptCommandLineOptions::OptimizationId opt
     return std::make_shared<llvm::LoopUnrolling>(4);
   case JlmOptCommandLineOptions::OptimizationId::LoopUnswitching:
     return std::make_shared<llvm::LoopUnswitching>(llvm::LoopUnswitchingDefaultHeuristic::create());
+  case JlmOptCommandLineOptions::OptimizationId::NodeHoisting:
+    return std::make_shared<llvm::NodeHoisting>();
   case JlmOptCommandLineOptions::OptimizationId::NodePullIn:
     return std::make_shared<llvm::NodeSinking>();
   case JlmOptCommandLineOptions::OptimizationId::NodePushOut:
@@ -678,6 +683,10 @@ JlmOptCommand::PrintRvsdgModule(
   else if (outputFormat == JlmOptCommandLineOptions::OutputFormat::JsonTree)
   {
     printAsRvsdgJsonTree(rvsdgModule, outputFile, statisticsCollector);
+  }
+  else if (outputFormat == JlmOptCommandLineOptions::OutputFormat::Null)
+  {
+    // No need to output anything
   }
   else
   {

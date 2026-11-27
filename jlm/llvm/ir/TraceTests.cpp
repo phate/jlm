@@ -13,8 +13,6 @@
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/ir/types.hpp>
-#include <jlm/rvsdg/bitstring/comparison.hpp>
-#include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
@@ -22,41 +20,35 @@
 
 #include <cassert>
 
-TEST(TraceTests, testTracingIOBarrier)
+TEST(TraceTests, testTracingMemoryHoistBarrier)
 {
   using namespace jlm;
   using namespace jlm::llvm;
 
-  // Creates a graph that looks like
-  // GraphImport("x")  GraphImport("io")
-  //       |        /---------/
-  //       v       v          |
-  //      IOBarrier           |
-  //          |     /---------/
-  //          v    v
-  //      IOBarrier
-  //
-  // And checks that both the IOBarrier outputs are traced back up to the "x" graph import
-
   // Arrange
   rvsdg::Graph graph;
 
-  const auto int32Type = rvsdg::BitType::Create(32);
+  const auto ptrType = PointerType::Create();
   const auto ioStateType = IOStateType::Create();
 
-  const auto myInt = &rvsdg::GraphImport::Create(graph, int32Type, "x");
+  const auto myPtr = &rvsdg::GraphImport::Create(graph, ptrType, "x");
   const auto myIo = &rvsdg::GraphImport::Create(graph, ioStateType, "io");
 
-  const auto ioBarrier1 = &rvsdg::CreateOpNode<IOBarrierOperation>({ myInt, myIo }, int32Type);
-  const auto ioBarrier1Output = ioBarrier1->output(0);
+  const auto & hoistBarrier1 = MemoryHoistBarrierOperation::createNode(*myPtr, *myIo, 0);
+  const auto hoistBarrier1Output = hoistBarrier1.output(0);
 
-  const auto ioBarrier2 =
-      &rvsdg::CreateOpNode<IOBarrierOperation>({ ioBarrier1Output, myIo }, int32Type);
-  const auto ioBarrier2Output = ioBarrier2->output(0);
+  const auto & hoistBarrier2 =
+      MemoryHoistBarrierOperation::createNode(*hoistBarrier1Output, *myIo, 0);
+  const auto hoistBarrier2Output = hoistBarrier2.output(0);
 
-  // Assert
-  EXPECT_EQ(&jlm::llvm::traceOutput(*ioBarrier1Output), myInt);
-  EXPECT_EQ(&jlm::llvm::traceOutput(*ioBarrier2Output), myInt);
+  // Act & Assert
+  OutputTracer tracer;
+  EXPECT_EQ(&tracer.trace(*hoistBarrier1Output), myPtr);
+  EXPECT_EQ(&tracer.trace(*hoistBarrier2Output), myPtr);
+
+  tracer.setTracingThroughHoistBarriers(false);
+  EXPECT_EQ(&tracer.trace(*hoistBarrier1Output), hoistBarrier1Output);
+  EXPECT_EQ(&tracer.trace(*hoistBarrier2Output), hoistBarrier2Output);
 }
 
 TEST(TraceTests, testGetConstantSignedInteger)
@@ -139,6 +131,25 @@ TEST(TraceTests, testGetConstantSignedInteger)
   EXPECT_EQ(tryGetConstantSignedInteger(*lambdaOutput), std::nullopt);
 }
 
+TEST(TraceTests, testGetConstantSignedIntegerThroughBitIntegerTypeConversions)
+{
+  using namespace jlm;
+  using namespace jlm::llvm;
+
+  rvsdg::Graph graph;
+  const auto bitType = rvsdg::BitType::Create(32);
+  const auto integerType = IntegerType::create(32);
+  auto & bitConstant = rvsdg::BitConstantOperation::create(
+      graph.GetRootRegion(),
+      rvsdg::BitValueRepresentation(32, -20));
+
+  auto & integerNode = BitToIntegerTypeOperation::createNode(bitConstant, integerType);
+  auto & bitNode = IntegerToBitTypeOperation::createNode(*integerNode.output(0), bitType);
+
+  EXPECT_EQ(tryGetConstantSignedInteger(*integerNode.output(0)), -20);
+  EXPECT_EQ(tryGetConstantSignedInteger(*bitNode.output(0)), -20);
+}
+
 TEST(TraceTests, testGetConstantSignedIntegerExtAndTrunc)
 {
   using namespace jlm;
@@ -170,21 +181,17 @@ TEST(TraceTests, testGetConstantSignedIntegerExtAndTrunc)
   const auto int32Type = rvsdg::BitType::Create(32);
   const auto int8Type = rvsdg::BitType::Create(8);
 
-  auto & bits32Output5 = rvsdg::BitConstantOperation::create(
-      graph.GetRootRegion(),
-      rvsdg::BitValueRepresentation(32, 5));
+  auto & bits32Output5 = *IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 5).output(0);
   auto & sextOutput = SExtOperation::create(64, bits32Output5);
   auto & zextOutput = ZExtOperation::create(64, bits32Output5);
 
-  auto & bits8OutputMinus20 = rvsdg::BitConstantOperation::create(
-      graph.GetRootRegion(),
-      rvsdg::BitValueRepresentation(8, -20));
+  auto & bits8OutputMinus20 =
+      *IntegerConstantOperation::Create(graph.GetRootRegion(), 8, -20).output(0);
   auto & sext2Output = SExtOperation::create(32, bits8OutputMinus20);
   auto & zext2Output = ZExtOperation::create(32, bits8OutputMinus20);
 
-  auto & bits32Output1023 = rvsdg::BitConstantOperation::create(
-      graph.GetRootRegion(),
-      rvsdg::BitValueRepresentation(32, 1023));
+  auto & bits32Output1023 =
+      *IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 1023).output(0);
   auto & truncOutput = TruncOperation::create(8, bits32Output1023);
   auto & sext3Output = SExtOperation::create(32, truncOutput);
   auto & zext3Output = ZExtOperation::create(32, truncOutput);
@@ -236,9 +243,7 @@ TEST(TraceTests, testGetConstantSignedIntegerExtThroughGamma)
   // Arrange
   rvsdg::Graph graph;
 
-  auto & bits32Output = rvsdg::BitConstantOperation::create(
-      graph.GetRootRegion(),
-      rvsdg::BitValueRepresentation(8, -20));
+  auto & bits32Output = *IntegerConstantOperation::Create(graph.GetRootRegion(), 8, -20).output(0);
   auto & controlOutput = rvsdg::ControlConstantOperation::create(graph.GetRootRegion(), 2, 1);
 
   auto & gammaNode = *rvsdg::GammaNode::create(&controlOutput, 2);
@@ -258,6 +263,43 @@ TEST(TraceTests, testGetConstantSignedIntegerExtThroughGamma)
   EXPECT_EQ(tryGetConstantSignedInteger(sextOutput), -20);
   EXPECT_EQ(tryGetConstantSignedInteger(truncOutput), -20);
   EXPECT_EQ(tryGetConstantSignedInteger(zextOutput), 65516u);
+}
+
+TEST(TraceTests, testGetConstantSignedIntegerOnThetaOutput)
+{
+  using namespace jlm;
+  using namespace jlm::llvm;
+
+  /**
+   * Creates an RVSDG that looks like:
+   *
+   * zero = I32(0)
+   * thetaOut = THETA(zero)
+   *   [_]{
+   *     p = CTRL(0)
+   *     c = I32(42)
+   *   }[p, c]
+   *
+   * export(thetaOut)
+   *
+   * The constant 42 lives inside the theta subregion.
+   * tryGetConstantSignedInteger from the outside still finds it.
+   */
+
+  // Arrange
+  rvsdg::Graph graph;
+
+  auto & zero = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
+
+  auto * theta = rvsdg::ThetaNode::create(&graph.GetRootRegion());
+  auto loopVar = theta->AddLoopVar(zero.output(0));
+
+  auto & c = IntegerConstantOperation::Create(*theta->subregion(), 32, 42);
+  loopVar.post->divert_to(c.output(0));
+  theta->set_predicate(&rvsdg::ControlConstantOperation::create(*theta->subregion(), 2, 1));
+
+  // Assert
+  EXPECT_EQ(tryGetConstantSignedInteger(*loopVar.output), 42);
 }
 
 TEST(TraceTests, testTraceAllPointerOriginsTheta)
@@ -314,9 +356,9 @@ TEST(TraceTests, testTraceAllPointerOriginsTheta)
   auto * incrementedPointer =
       GetElementPtrOperation::create(p.pre, { oneInLoop.output(0) }, int32Type);
   auto * incrementedI =
-      rvsdg::CreateOpNode<rvsdg::bitadd_op>({ i.pre, oneInLoop.output(0) }, 32).output(0);
+      rvsdg::CreateOpNode<IntegerAddOperation>({ i.pre, oneInLoop.output(0) }, 32).output(0);
   auto * isLessThanHundred =
-      rvsdg::CreateOpNode<rvsdg::bitult_op>({ incrementedI, hundredInLoop.output(0) }, 32)
+      rvsdg::CreateOpNode<IntegerUltOperation>({ incrementedI, hundredInLoop.output(0) }, 32)
           .output(0);
   auto & matchNode = rvsdg::MatchOperation::CreateNode(*isLessThanHundred, { { 1, 1 } }, 0, 2);
 

@@ -58,6 +58,7 @@ public:
     Llvm,
     Mlir,
     Tree,
+    Null, // Do not output anything
 
     LastEnumValue // must always be the last enum value, used for iteration
   };
@@ -73,13 +74,21 @@ public:
     DeadNodeElimination,
     FunctionInlining,
     IfConversion,
+    IOBarrierElimination,
     InvariantValueRedirection,
     LoadChainSeparation,
     LoopStrengthReduction,
     LoopUnrolling,
     LoopUnswitching,
+    NodeHoisting,
     NodePullIn,
+
+    /**
+     * \deprecated
+     * Use NodeHoisting instead.
+     */
     NodePushOut,
+
     NodeReduction,
     PredicateCorrelation,
     RvsdgTreePrinter,

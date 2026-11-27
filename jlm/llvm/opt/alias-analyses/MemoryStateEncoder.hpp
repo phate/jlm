@@ -11,15 +11,12 @@
 
 namespace jlm::rvsdg
 {
-class DeltaNode;
 class GammaNode;
 class LambdaNode;
 class Output;
-class PhiNode;
 class Region;
 class RvsdgModule;
 class SimpleNode;
-class StructuralNode;
 class ThetaNode;
 }
 
@@ -28,10 +25,7 @@ namespace jlm::util
 class StatisticsCollector;
 }
 
-namespace jlm::llvm
-{
-
-namespace aa
+namespace jlm::llvm::aa
 {
 
 class ModRefSummary;
@@ -53,7 +47,18 @@ class ModRefSummary;
 class MemoryStateEncoder final
 {
 public:
-  class Context;
+  struct MemoryStateTypeCounters;
+  class Statistics;
+  class StateMap;
+
+  struct EncodingCounter
+  {
+    size_t numReplacedLoads = 0;
+    size_t numRedirectedLoads = 0;
+
+    size_t numReplacedStores = 0;
+    size_t numRedirectedStores = 0;
+  };
 
   ~MemoryStateEncoder() noexcept;
 
@@ -77,72 +82,49 @@ public:
 
 private:
   void
-  EncodeRegion(rvsdg::Region & region);
+  encodeInterProcedural(rvsdg::Region & region);
 
   void
-  EncodeStructuralNode(rvsdg::StructuralNode & structuralNode);
+  encodeIntraProcedural(rvsdg::Region & region, StateMap & stateMap);
 
   void
-  EncodeSimpleNode(const rvsdg::SimpleNode & simpleNode);
+  encodeAlloca(const rvsdg::SimpleNode & allocaNode, StateMap & stateMap) const;
 
   void
-  EncodeAlloca(const rvsdg::SimpleNode & allocaNode);
+  encodeMalloc(const rvsdg::SimpleNode & mallocNode, StateMap & stateMap) const;
 
   void
-  EncodeMalloc(const rvsdg::SimpleNode & mallocNode);
+  encodeLoad(const rvsdg::SimpleNode & node, StateMap & stateMap);
 
   void
-  EncodeLoad(const rvsdg::SimpleNode & node);
+  encodeStore(const rvsdg::SimpleNode & node, StateMap & stateMap);
 
   void
-  EncodeStore(const rvsdg::SimpleNode & node);
+  encodeFree(const rvsdg::SimpleNode & freeNode, StateMap & stateMap) const;
 
   void
-  EncodeFree(const rvsdg::SimpleNode & freeNode);
+  encodeCall(const rvsdg::SimpleNode & callNode, StateMap & stateMap) const;
 
   void
-  EncodeCall(const rvsdg::SimpleNode & callNode);
+  encodeMemcpy(const rvsdg::SimpleNode & memcpyNode, StateMap & stateMap) const;
 
   void
-  EncodeMemcpy(const rvsdg::SimpleNode & memcpyNode);
+  encodeMemset(const rvsdg::SimpleNode & memsetNode, StateMap & stateMap) const;
 
   void
-  EncodeMemset(const rvsdg::SimpleNode & memsetNode);
+  encodeMemmove(const rvsdg::SimpleNode & memmoveNode, StateMap & stateMap) const;
 
   void
-  EncodeLambda(const rvsdg::LambdaNode & lambda);
+  encodeLambda(const rvsdg::LambdaNode & lambda);
 
   void
-  EncodeLambdaEntry(const rvsdg::LambdaNode & lambdaNode);
+  encodeGamma(rvsdg::GammaNode & gammaNode, StateMap & stateMap);
 
   void
-  EncodeLambdaExit(const rvsdg::LambdaNode & lambdaNode);
+  encodeTheta(rvsdg::ThetaNode & thetaNode, StateMap & stateMap);
 
-  void
-  EncodePhi(const rvsdg::PhiNode & phiNode);
-
-  void
-  EncodeDelta(const rvsdg::DeltaNode & deltaNode);
-
-  void
-  EncodeGamma(rvsdg::GammaNode & gammaNode);
-
-  void
-  EncodeGammaEntry(rvsdg::GammaNode & gammaNode);
-
-  void
-  EncodeGammaExit(rvsdg::GammaNode & gammaNode);
-
-  void
-  EncodeTheta(rvsdg::ThetaNode & thetaNode);
-
-  std::vector<rvsdg::Output *>
-  EncodeThetaEntry(rvsdg::ThetaNode & thetaNode);
-
-  void
-  EncodeThetaExit(
-      rvsdg::ThetaNode & thetaNode,
-      const std::vector<rvsdg::Output *> & thetaStateOutputs);
+  std::unique_ptr<MemoryStateTypeCounters>
+  gatherStatistics(const rvsdg::Region & region) const;
 
   /**
    * Replace \p loadNode with a new copy that takes the provided \p memoryStates. All users of the
@@ -154,7 +136,7 @@ private:
    * @return The newly created LoadNode.
    */
   [[nodiscard]] static rvsdg::SimpleNode &
-  ReplaceLoadNode(
+  replaceLoadNode(
       const rvsdg::SimpleNode & node,
       const std::vector<rvsdg::Output *> & memoryStates);
 
@@ -168,23 +150,23 @@ private:
    * @return The newly created StoreNode.
    */
   [[nodiscard]] static rvsdg::SimpleNode &
-  ReplaceStoreNode(
+  replaceStoreNode(
       const rvsdg::SimpleNode & node,
       const std::vector<rvsdg::Output *> & memoryStates);
 
   /**
-   * Replace \p memcpyNode with a new copy that takes the provided \p memoryStates. All users of
-   * the outputs of \p memcpyNode are redirected to the respective outputs of the newly created
+   * Replace \p memCpyNode with a new copy that takes the provided \p memoryStates. All users of
+   * the outputs of \p memCpyNode are redirected to the respective outputs of the newly created
    * copy.
    *
-   * @param memcpyNode A rvsdg::SimpleNode representing a MemCpyOperation.
-   * @param memoryStates The memory states the new memcpy node should consume.
+   * @param memCpyNode A rvsdg::SimpleNode representing a MemCpyOperation.
+   * @param memoryStates The memory states the new \ref MemCpyOperation node should consume.
    *
    * @return A vector with the memory states of the newly created copy.
    */
-  [[nodiscard]] static std::vector<rvsdg::Output *>
-  ReplaceMemcpyNode(
-      const rvsdg::SimpleNode & memcpyNode,
+  [[nodiscard]] static rvsdg::SimpleNode &
+  replaceMemcpyNode(
+      const rvsdg::SimpleNode & memCpyNode,
       const std::vector<rvsdg::Output *> & memoryStates);
 
   /**
@@ -197,15 +179,31 @@ private:
    *
    * @return A vector with the memory states of the newly created copy.
    */
-  [[nodiscard]] static std::vector<rvsdg::Output *>
-  ReplaceMemsetNode(
+  [[nodiscard]] static rvsdg::SimpleNode &
+  replaceMemsetNode(
       const rvsdg::SimpleNode & memsetNode,
       const std::vector<rvsdg::Output *> & memoryStates);
 
-  std::unique_ptr<Context> Context_;
+  /**
+   * Replace \p memmoveNode with a new copy that takes the provided \p memoryStates. All users of
+   * the outputs of \p memmoveNode are redirected to the respective outputs of the newly created
+   * copy.
+   *
+   * @param memmoveNode A rvsdg::SimpleNode representing a \ref MemMoveOperation.
+   * @param memoryStates The memory states the new \ref MemMoveOperation node should consume.
+   *
+   * @return A vector with the memory states of the newly created copy.
+   */
+  [[nodiscard]] static rvsdg::SimpleNode &
+  replaceMemmoveNode(
+      const rvsdg::SimpleNode & memmoveNode,
+      const std::vector<rvsdg::Output *> & memoryStates);
+
+  EncodingCounter encodingCounter_;
+  std::unique_ptr<Statistics> statistics_;
+  const ModRefSummary * modRefSummary_ = nullptr;
 };
 
-}
 }
 
 #endif // JLM_LLVM_OPT_ALIAS_ANALYSES_MEMORYSTATEENCODER_HPP

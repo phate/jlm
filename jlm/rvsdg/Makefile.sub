@@ -14,8 +14,8 @@ librvsdg_SOURCES = \
     jlm/rvsdg/region.cpp \
     jlm/rvsdg/RegionPredicateTrace.cpp \
     jlm/rvsdg/RvsdgModule.cpp \
-    jlm/rvsdg/simple-node.cpp \
-    jlm/rvsdg/structural-node.cpp \
+    jlm/rvsdg/SimpleNode.cpp \
+    jlm/rvsdg/StructuralNode.cpp \
     jlm/rvsdg/TestNodes.cpp \
     jlm/rvsdg/TestOperations.cpp \
     jlm/rvsdg/theta.cpp \
@@ -40,6 +40,7 @@ librvsdg_SOURCES = \
 librvsdg_HEADERS = \
     jlm/rvsdg/FunctionType.hpp \
     jlm/rvsdg/MatchType.hpp \
+    jlm/rvsdg/MatchVariant.hpp \
     jlm/rvsdg/operation.hpp \
     jlm/rvsdg/delta.hpp \
     jlm/rvsdg/DotWriter.hpp \
@@ -62,7 +63,7 @@ librvsdg_HEADERS = \
     jlm/rvsdg/substitution.hpp \
     jlm/rvsdg/unary.hpp \
     jlm/rvsdg/UnitType.hpp \
-    jlm/rvsdg/simple-node.hpp \
+    jlm/rvsdg/SimpleNode.hpp \
     jlm/rvsdg/TestNodes.hpp \
     jlm/rvsdg/TestOperations.hpp \
     jlm/rvsdg/TestType.hpp \
@@ -78,7 +79,7 @@ librvsdg_HEADERS = \
     jlm/rvsdg/NodeNormalization.hpp \
     jlm/rvsdg/nullary.hpp \
     jlm/rvsdg/Phi.hpp \
-    jlm/rvsdg/structural-node.hpp \
+    jlm/rvsdg/StructuralNode.hpp \
     jlm/rvsdg/control.hpp \
     jlm/rvsdg/region.hpp \
 
@@ -92,6 +93,7 @@ run-librvsdg-tests_SOURCES = \
     jlm/rvsdg/GraphTests.cpp \
     jlm/rvsdg/InputTests.cpp \
     jlm/rvsdg/MatchTypeTests.cpp \
+    jlm/rvsdg/MatchVariantTests.cpp \
     jlm/rvsdg/NodeTests.cpp \
     jlm/rvsdg/OutputTests.cpp \
     jlm/rvsdg/RegionPredicateTraceTests.cpp \
@@ -103,7 +105,7 @@ run-librvsdg-tests_SOURCES = \
     jlm/rvsdg/TraverserTests.cpp \
     jlm/rvsdg/TraceTests.cpp \
     jlm/rvsdg/TransformationSequenceTests.cpp \
-    jlm/rvsdg/TypeMismatchTests.cpp \
+    jlm/rvsdg/TypeTests.cpp \
 
 run-librvsdg-tests_LIBS = librvsdg libutil
 $(eval $(call common_test,run-librvsdg-tests))

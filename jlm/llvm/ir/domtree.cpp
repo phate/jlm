@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/ir/cfg-structure.hpp>
-#include <jlm/llvm/ir/cfg.hpp>
+#include <jlm/llvm/ir/BasicBlock.hpp>
+#include <jlm/llvm/ir/ControlFlowGraph.hpp>
 #include <jlm/llvm/ir/domtree.hpp>
 
 #include <functional>

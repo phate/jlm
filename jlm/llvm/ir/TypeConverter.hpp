@@ -55,6 +55,9 @@ public:
   static ::llvm::IntegerType *
   ConvertBitType(const rvsdg::BitType & bitType, ::llvm::LLVMContext & context);
 
+  static ::llvm::IntegerType *
+  ConvertIntegerType(const IntegerType & intType, ::llvm::LLVMContext & context);
+
   ::llvm::FunctionType *
   ConvertFunctionType(const rvsdg::FunctionType & functionType, ::llvm::LLVMContext & context);
 

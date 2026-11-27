@@ -4,10 +4,14 @@
  */
 
 #include <gtest/gtest.h>
+#include <jlm/rvsdg/TestOperations.hpp>
 
 #include <jlm/rvsdg/TestType.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
+
+namespace jlm::rvsdg
+{
 
 TEST(ThetaTests, TestThetaCreation)
 {
@@ -80,4 +84,58 @@ TEST(ThetaTests, TestThetaLoopVarRemoval)
   EXPECT_EQ(loopvars[1].pre, lv2.pre);
   EXPECT_EQ(loopvars[1].post, lv2.post);
   EXPECT_EQ(loopvars[1].output, lv2.output);
+}
+
+TEST(ThetaTests, reduceStaticallyKnownPredicate)
+{
+  // Arrange
+  Graph rvsdg;
+  auto valueType = TestType::createValueType();
+
+  auto x = &GraphImport::Create(rvsdg, valueType, "x");
+  auto y = &GraphImport::Create(rvsdg, valueType, "y");
+
+  auto thetaNode = ThetaNode::create(&rvsdg.GetRootRegion());
+  auto loopVar1 = thetaNode->AddLoopVar(x);
+  auto loopVar2 = thetaNode->AddLoopVar(y);
+
+  auto testNode1 = TestOperation::createNode(
+      thetaNode->subregion(),
+      { loopVar1.pre, loopVar2.pre },
+      { valueType });
+  auto testNode2 =
+      TestOperation::createNode(thetaNode->subregion(), { loopVar2.pre }, { valueType });
+
+  auto & ctlConstant = ControlConstantOperation::createFalse(*thetaNode->subregion());
+
+  thetaNode->set_predicate(&ctlConstant);
+  loopVar1.post->divert_to(testNode1->output(0));
+  loopVar2.post->divert_to(testNode2->output(0));
+
+  auto & x1 = GraphExport::Create(*loopVar1.output, "");
+  auto & x2 = GraphExport::Create(*loopVar2.output, "");
+
+  // Act
+  ThetaNode::reduceStaticallyKnownPredicate(*thetaNode);
+
+  // Assert
+  EXPECT_FALSE(Region::containsNodeType<ThetaNode>(rvsdg.GetRootRegion(), false));
+  EXPECT_EQ(rvsdg.GetRootRegion().numNodes(), 3u);
+
+  {
+    auto [node, operation] = TryGetSimpleNodeAndOptionalOp<TestOperation>(*x1.origin());
+    EXPECT_NE(operation, nullptr);
+    EXPECT_EQ(node->ninputs(), 2u);
+    EXPECT_EQ(node->input(0)->origin(), x);
+    EXPECT_EQ(node->input(1)->origin(), y);
+  }
+
+  {
+    auto [node, operation] = TryGetSimpleNodeAndOptionalOp<TestOperation>(*x2.origin());
+    EXPECT_NE(operation, nullptr);
+    EXPECT_EQ(node->ninputs(), 1u);
+    EXPECT_EQ(node->input(0)->origin(), y);
+  }
+}
+
 }

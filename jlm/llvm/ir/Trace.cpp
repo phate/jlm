@@ -11,10 +11,9 @@
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
 #include <jlm/llvm/ir/types.hpp>
-#include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/region.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/Trace.hpp>
 #include <jlm/rvsdg/type.hpp>
@@ -24,59 +23,86 @@
 namespace jlm::llvm
 {
 
-OutputTracer::OutputTracer(const bool enableCaching)
-    : rvsdg::OutputTracer(enableCaching)
+OutputTracer::OutputTracer()
+    : rvsdg::OutputTracer()
 {}
 
-rvsdg::Output &
-OutputTracer::traceStep(rvsdg::Output & output, const rvsdg::Region * withinRegion)
+OutputTracer::TraceStepResult
+OutputTracer::traceStep(
+    rvsdg::Output & output,
+    BackEdgeState backEdgeState,
+    const rvsdg::Region * withinRegion)
 {
-  auto & trace1 = rvsdg::OutputTracer::traceStep(output, withinRegion);
+  const auto trace1 = rvsdg::OutputTracer::traceStep(output, backEdgeState, withinRegion);
 
-  if (const auto [node, ioBarrierOp] =
-          rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(trace1);
-      node && ioBarrierOp)
+  // Impossible origins can not be traced any further
+  if (trace1.isDeadEnd())
+    return trace1;
+
+  auto & trace1Output = trace1.getOutput();
+
+  if (traceThroughHoistBarriers_)
   {
-    return *IOBarrierOperation::BarredInput(*node).origin();
+    if (const auto [node, ioBarrierOp] =
+            rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(trace1Output);
+        node && ioBarrierOp)
+    {
+      return TraceStepResult::createStepOutput(*IOBarrierOperation::BarredInput(*node).origin());
+    }
+
+    if (const auto [node, memoryHoistBarrierOp] =
+            rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryHoistBarrierOperation>(trace1Output);
+        node && memoryHoistBarrierOp)
+    {
+      return TraceStepResult::createStepOutput(
+          *MemoryHoistBarrierOperation::getAddressInput(*node).origin());
+    }
   }
 
   // If enabled, try tracing through the memory states of load nodes
   if (traceThroughLoadedStates_)
   {
-    if (const auto [node, loadOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<LoadOperation>(trace1);
+    if (const auto [node, loadOp] =
+            rvsdg::TryGetSimpleNodeAndOptionalOp<LoadOperation>(trace1Output);
         node && loadOp)
     {
-      if (is<MemoryStateType>(trace1.Type()))
+      if (is<MemoryStateType>(trace1Output.Type()))
       {
         // Map the memory state output to the corresponding memory state input
-        auto & memoryStateInput = LoadOperation::MapMemoryStateOutputToInput(trace1);
-        return *memoryStateInput.origin();
+        auto & memoryStateInput = LoadOperation::MapMemoryStateOutputToInput(trace1Output);
+        return TraceStepResult::createStepOutput(*memoryStateInput.origin());
       }
     }
   }
 
+  // We were not able to make any extra progress on the trace result, so return it as is
   return trace1;
 }
 
 rvsdg::Output &
-traceOutput(rvsdg::Output & output, const rvsdg::Region * withinRegion)
+traceOutput(rvsdg::Output & output, bool mayEnterSubregions, const rvsdg::Region * withinRegion)
 {
-  constexpr bool enableCaching = false;
-  OutputTracer tracer(enableCaching);
+  OutputTracer tracer;
+  tracer.setStructuralNodePolicy(
+      mayEnterSubregions
+          ? rvsdg::OutputTracer::StructuralNodePolicy::traceIntoSubregions
+          : rvsdg::OutputTracer::StructuralNodePolicy::traceThroughIfDetectedInvariant);
+  tracer.setRegionPredicateCheckingEnabled(mayEnterSubregions);
+  tracer.setEnterPhiNodes(mayEnterSubregions);
   return tracer.trace(output, withinRegion);
 }
 
 std::optional<int64_t>
 tryGetConstantSignedInteger(const rvsdg::Output & output)
 {
-  const auto & normalized = llvm::traceOutput(output, nullptr);
+  const auto & normalized = llvm::traceOutput(output, true);
 
   if (const auto [_, constant] =
           rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(normalized);
       constant)
   {
     const auto & rep = constant->Representation();
-    if (rep.is_known() && rep.nbits() <= 64)
+    if (rep.nbits() <= 64)
       return rep.to_int();
     return std::nullopt;
   }
@@ -89,6 +115,20 @@ tryGetConstantSignedInteger(const rvsdg::Output & output)
     if (rep.is_known() && rep.nbits() <= 64)
       return rep.to_int();
     return std::nullopt;
+  }
+
+  if (const auto [node, conversionOp] =
+          rvsdg::TryGetSimpleNodeAndOptionalOp<BitToIntegerTypeOperation>(normalized);
+      conversionOp)
+  {
+    return tryGetConstantSignedInteger(*node->input(0)->origin());
+  }
+
+  if (const auto [node, conversionOp] =
+          rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerToBitTypeOperation>(normalized);
+      conversionOp)
+  {
+    return tryGetConstantSignedInteger(*node->input(0)->origin());
   }
 
   if (const auto [sextNode, sextOp] =
@@ -158,7 +198,7 @@ TracePointerOriginPrecise(const rvsdg::Output & p)
   while (true)
   {
     // Use normalization function to get past all trivially invariant operations
-    base = &llvm::traceOutput(*base);
+    base = &llvm::traceOutput(*base, true);
 
     if (const auto [gepNode, gepOperation] =
             rvsdg::TryGetSimpleNodeAndOptionalOp<GetElementPtrOperation>(*base);
@@ -191,7 +231,7 @@ traceAllPointerOriginsInternal(
     return false;
 
   // Normalize the pointer first, to avoid tracing trivial temporary outputs
-  basePointer = &llvm::traceOutput(*basePointer);
+  basePointer = &llvm::traceOutput(*basePointer, true);
 
   auto it = traceCollection.AllTracedOutputs.find(basePointer);
   if (it != traceCollection.AllTracedOutputs.end())

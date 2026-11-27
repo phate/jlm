@@ -1,0 +1,245 @@
+/*
+ * Copyright 2017 Nico Reißmann <nico.reissmann@gmail.com>
+ * See COPYING for terms of redistribution.
+ */
+
+#ifndef JLM_LLVM_OPT_LOOP_UNROLLING_HPP
+#define JLM_LLVM_OPT_LOOP_UNROLLING_HPP
+
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/llvm/ir/Trace.hpp>
+#include <jlm/rvsdg/theta.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
+#include <jlm/util/common.hpp>
+
+namespace jlm::llvm
+{
+
+class LlvmRvsdgModule;
+
+/**
+ * \brief Optimization that attempts to unroll loops (thetas).
+ */
+class LoopUnrolling final : public rvsdg::Transformation
+{
+public:
+  class Statistics;
+
+  ~LoopUnrolling() noexcept override;
+
+  explicit LoopUnrolling(const size_t factor)
+      : Transformation("LoopUnrolling"),
+        factor_(factor)
+  {}
+
+  /**
+   * Given a module all inner most loops (thetas) are found and unrolled if possible.
+   * All nodes in the module are traversed and if a theta is found and is the inner most theta
+   * then an attempt is made to unroll it.
+   *
+   * \param module Module where the innermost loops are unrolled
+   * \param statisticsCollector Statistics collector for collecting loop unrolling statistics.
+   */
+  void
+  Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
+
+private:
+  size_t factor_;
+};
+
+class LoopUnrollInfo final
+{
+public:
+  ~LoopUnrollInfo() noexcept = default;
+
+private:
+  LoopUnrollInfo(
+      rvsdg::SimpleNode * cmpnode,
+      rvsdg::SimpleNode * armnode,
+      rvsdg::Output * idv,
+      rvsdg::Output * step,
+      rvsdg::Output * end)
+      : end_(end),
+        step_(step),
+        cmpnode_(cmpnode),
+        armnode_(armnode),
+        idv_(idv)
+  {}
+
+public:
+  LoopUnrollInfo(const LoopUnrollInfo &) = delete;
+
+  LoopUnrollInfo(LoopUnrollInfo &&) = delete;
+
+  LoopUnrollInfo &
+  operator=(const LoopUnrollInfo &) = delete;
+
+  LoopUnrollInfo &
+  operator=(LoopUnrollInfo &&) = delete;
+
+  inline rvsdg::ThetaNode *
+  theta() const noexcept
+  {
+    auto node = idv()->region()->node();
+    return util::assertedCast<rvsdg::ThetaNode>(node);
+  }
+
+  inline bool
+  has_known_init() const noexcept
+  {
+    return is_known(init());
+  }
+
+  inline bool
+  has_known_step() const noexcept
+  {
+    return is_known(step());
+  }
+
+  inline bool
+  has_known_end() const noexcept
+  {
+    return is_known(end());
+  }
+
+  inline bool
+  is_known() const noexcept
+  {
+    return has_known_init() && has_known_step() && has_known_end();
+  }
+
+  std::unique_ptr<IntegerValueRepresentation>
+  niterations() const noexcept;
+
+  rvsdg::SimpleNode *
+  cmpnode() const noexcept
+  {
+    return cmpnode_;
+  }
+
+  [[nodiscard]] const rvsdg::SimpleOperation &
+  cmpoperation() const noexcept
+  {
+    return cmpnode()->GetOperation();
+  }
+
+  inline rvsdg::SimpleNode *
+  armnode() const noexcept
+  {
+    return armnode_;
+  }
+
+  [[nodiscard]] const rvsdg::SimpleOperation &
+  armoperation() const noexcept
+  {
+    return armnode()->GetOperation();
+  }
+
+  inline rvsdg::Output *
+  idv() const noexcept
+  {
+    return idv_;
+  }
+
+  inline jlm::rvsdg::Output *
+  init() const noexcept
+  {
+    return theta()->MapPreLoopVar(*idv()).input->origin();
+  }
+
+  const IntegerValueRepresentation *
+  init_value() const noexcept
+  {
+    return value(init());
+  }
+
+  inline rvsdg::Output *
+  step() const noexcept
+  {
+    return step_;
+  }
+
+  const IntegerValueRepresentation *
+  step_value() const noexcept
+  {
+    return value(step());
+  }
+
+  inline rvsdg::Output *
+  end() const noexcept
+  {
+    return end_;
+  }
+
+  const IntegerValueRepresentation *
+  end_value() const noexcept
+  {
+    return value(end());
+  }
+
+  bool
+  is_additive() const noexcept
+  {
+    return jlm::rvsdg::is<IntegerAddOperation>(armnode());
+  }
+
+  inline bool
+  is_subtractive() const noexcept
+  {
+    return jlm::rvsdg::is<IntegerSubOperation>(armnode());
+  }
+
+  [[nodiscard]] size_t
+  nbits() const noexcept;
+
+  IntegerValueRepresentation
+  remainder(size_t factor) const noexcept
+  {
+    return niterations()->umod({ nbits(), (int64_t)factor });
+  }
+
+  static std::unique_ptr<LoopUnrollInfo>
+  create(rvsdg::ThetaNode * theta);
+
+private:
+  bool
+  is_known(const rvsdg::Output * output) const noexcept
+  {
+    auto & tracedOutput = llvm::traceOutput(*output, false);
+    auto [_, constantOperation] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(tracedOutput);
+    return constantOperation != nullptr;
+  }
+
+  const IntegerValueRepresentation *
+  value(const rvsdg::Output * output) const noexcept
+  {
+    if (!is_known(output))
+      return nullptr;
+
+    auto & tracedOutput = llvm::traceOutput(*output, false);
+    auto [_, constantOperation] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(tracedOutput);
+    return constantOperation == nullptr ? nullptr : &constantOperation->Representation();
+  }
+
+  rvsdg::Output * end_;
+  rvsdg::Output * step_;
+  rvsdg::SimpleNode * cmpnode_;
+  rvsdg::SimpleNode * armnode_;
+  rvsdg::Output * idv_;
+};
+
+/**
+ * Try to unroll the given theta.
+ *
+ * \param node The theta to attempt the unrolling on.
+ * \param factor The number of times to unroll the loop, e.g., if the factor is two then the loop
+ * body is duplicated in the unrolled loop.
+ */
+void
+unroll(rvsdg::ThetaNode * node, size_t factor);
+
+}
+
+#endif

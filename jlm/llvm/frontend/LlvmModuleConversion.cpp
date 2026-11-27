@@ -5,11 +5,15 @@
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/CallingConvention.hpp>
-#include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/operators/AggregateOperations.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/ArithmeticWithOverflowIntrinsicOperations.hpp>
+#include <jlm/llvm/ir/operators/BitManipulationIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
+#include <jlm/llvm/ir/operators/FloatingPointMinMaxIntrinsicOperations.hpp>
+#include <jlm/llvm/ir/operators/FloatingPointTestIntrinsicOperations.hpp>
+#include <jlm/llvm/ir/operators/GeneralIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
@@ -221,17 +225,13 @@ ConvertValue(::llvm::Value * v, tacsvector_t & tacs, Context & ctx)
   return var;
 }
 
-static rvsdg::BitValueRepresentation
+static IntegerValueRepresentation
 convert_apint(const ::llvm::APInt & value)
 {
-  ::llvm::APInt v;
-  if (value.isNegative())
-    v = -value;
-
   auto str = toString(value, 2, false);
   std::reverse(str.begin(), str.end());
 
-  rvsdg::BitValueRepresentation vr(str.c_str());
+  IntegerValueRepresentation vr(str.c_str());
   if (value.isNegative())
     vr = vr.sext(value.getBitWidth() - str.size());
   else
@@ -975,6 +975,15 @@ AddIOBarrier(tacsvector_t & tacs, const Variable * operand, const Context & ctx)
   return tacs.back()->result(0);
 }
 
+static const Variable *
+addMemoryHoistBarrier(tacsvector_t & tacs, const Variable * address, const Context & ctx)
+{
+  auto hoistBarrierOperation = std::make_unique<MemoryHoistBarrierOperation>(0);
+  tacs.push_back(
+      ThreeAddressCode::create(std::move(hoistBarrierOperation), { address, ctx.iostate() }));
+  return tacs.back()->result(0);
+}
+
 static inline const Variable *
 convert_load_instruction(::llvm::Instruction * i, tacsvector_t & tacs, Context & ctx)
 {
@@ -1007,7 +1016,7 @@ convert_load_instruction(::llvm::Instruction * i, tacsvector_t & tacs, Context &
   }
   else
   {
-    address = AddIOBarrier(tacs, address, ctx);
+    address = addMemoryHoistBarrier(tacs, address, ctx);
     auto loadTac =
         LoadNonVolatileOperation::Create(address, ctx.memory_state(), loadedType, alignment);
     tacs.push_back(std::move(loadTac));
@@ -1053,7 +1062,7 @@ convert_store_instruction(::llvm::Instruction * i, tacsvector_t & tacs, Context 
   }
   else
   {
-    address = AddIOBarrier(tacs, address, ctx);
+    address = addMemoryHoistBarrier(tacs, address, ctx);
     auto storeTac =
         StoreNonVolatileOperation::Create(address, value, ctx.memory_state(), alignment);
     tacs.push_back(std::move(storeTac));
@@ -1137,12 +1146,12 @@ convertFreeCall(
 
   const auto pointer = ConvertValue(instruction.getArgOperand(0), threeAddressCodes, context);
 
-  threeAddressCodes.push_back(FreeOperation::Create(pointer, { memstate }, ioState));
+  threeAddressCodes.push_back(FreeOperation::Create(pointer, ioState, { memstate }));
   const auto & freeThreeAddressCode = *threeAddressCodes.back().get();
 
   threeAddressCodes.push_back(
-      AssignmentOperation::create(freeThreeAddressCode.result(0), memstate));
-  threeAddressCodes.push_back(AssignmentOperation::create(freeThreeAddressCode.result(1), ioState));
+      AssignmentOperation::create(freeThreeAddressCode.result(1), memstate));
+  threeAddressCodes.push_back(AssignmentOperation::create(freeThreeAddressCode.result(0), ioState));
 
   return nullptr;
 }
@@ -1251,6 +1260,41 @@ convertMemSetCall(
   return nullptr;
 }
 
+static const Variable *
+convertMemMoveCall(
+    const ::llvm::IntrinsicInst & instruction,
+    tacsvector_t & threeAddressCodes,
+    Context & context)
+{
+  JLM_ASSERT(
+      instruction.getIntrinsicID() == ::llvm::Intrinsic::memmove
+      || instruction.getIntrinsicID() == ::llvm::Intrinsic::memmove_element_unordered_atomic);
+
+  if (instruction.getIntrinsicID() == ::llvm::Intrinsic::memmove_element_unordered_atomic)
+    throw std::logic_error("Unhandled memmove_element_unordered_atomic intrinsic.");
+
+  auto memoryState = context.memory_state();
+
+  const auto destOperand = ConvertValue(instruction.getArgOperand(0), threeAddressCodes, context);
+  const auto srcOperand = ConvertValue(instruction.getArgOperand(1), threeAddressCodes, context);
+  const auto lengthOperand = ConvertValue(instruction.getArgOperand(2), threeAddressCodes, context);
+
+  if (IsVolatile(*instruction.getArgOperand(3)))
+  {
+    throw std::logic_error("Unhandled volatile memmove intrinsic.");
+  }
+
+  threeAddressCodes.push_back(MemMoveNonVolatileOperation::createTac(
+      *destOperand,
+      *srcOperand,
+      *lengthOperand,
+      { memoryState }));
+  threeAddressCodes.push_back(
+      AssignmentOperation::create(threeAddressCodes.back()->result(0), memoryState));
+
+  return nullptr;
+}
+
 static bool
 isMallocCall(const ::llvm::CallInst & callInstruction)
 {
@@ -1272,6 +1316,275 @@ convertFMulAddIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tac
   const auto multiplicand = ConvertValue(instruction.getArgOperand(1), tacs, ctx);
   const auto summand = ConvertValue(instruction.getArgOperand(2), tacs, ctx);
   tacs.push_back(FMulAddIntrinsicOperation::CreateTac(*multiplier, *multiplicand, *summand));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertCeilIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  tacs.push_back(CeilOperation::createTac(*operand));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertRIntIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  tacs.push_back(RIntOperation::createTac(*operand));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertTruncIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  tacs.push_back(TruncIntrinsicOperation::createTac(*operand));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertFloorIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  tacs.push_back(FloorOperation::createTac(*operand));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertRoundIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  tacs.push_back(RoundOperation::createTac(*operand));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertFShlIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  const auto operand3 = ConvertValue(instruction.getArgOperand(2), tacs, context);
+  tacs.push_back(FShlOperation::createTac(*operand1, *operand2, *operand3));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertSMaxIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(SMaxOperation::createTac(*operand1, *operand2));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertUMaxIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(UMaxOperation::createTac(*operand1, *operand2));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertSMinIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(SMinOperation::createTac(*operand1, *operand2));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertUMinIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(UMinOperation::createTac(*operand1, *operand2));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertCopysignIntrinsic(
+    const ::llvm::CallInst & instruction,
+    tacsvector_t & tacs,
+    Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(CopysignOperation::createTac(*operand1, *operand2));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertPtrMaskIntrinsic(
+    const ::llvm::CallInst & instruction,
+    tacsvector_t & tacs,
+    Context & context)
+{
+  const auto ptrOperand = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto maskOperand = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(PtrMaskOperation::createTac(*ptrOperand, *maskOperand));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertFAbsIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  tacs.push_back(FAbsOperation::createTac(*operand));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertAbsIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(AbsOperation::createTac(*operand1, *operand2));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertBSwapIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  tacs.push_back(BSwapOperation::createTac(*operand));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertCtlzIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(CtlzOperation::createTac(*operand1, *operand2));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertCttzIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(CttzOperation::createTac(*operand1, *operand2));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertCtpopIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & context)
+{
+  const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  tacs.push_back(CtpopOperation::createTac(*operand));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertIsConstantIntrinsic(
+    const ::llvm::CallInst & instruction,
+    tacsvector_t & tacs,
+    Context & context)
+{
+  const auto operand = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  tacs.push_back(IsConstantOperation::createTac(*operand));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertIsFPClassIntrinsic(
+    const ::llvm::CallInst & instruction,
+    tacsvector_t & tacs,
+    Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(IsFPClassOperation::createTac(*operand1, *operand2));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertSAddWithOverflowIntrinsic(
+    const ::llvm::CallInst & instruction,
+    tacsvector_t & tacs,
+    Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(SAddWithOverflowOperation::createTac(*operand1, *operand2));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertUAddWithOverflowIntrinsic(
+    const ::llvm::CallInst & instruction,
+    tacsvector_t & tacs,
+    Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(UAddWithOverflowOperation::createTac(*operand1, *operand2));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertSSubWithOverflowIntrinsic(
+    const ::llvm::CallInst & instruction,
+    tacsvector_t & tacs,
+    Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(SSubWithOverflowOperation::createTac(*operand1, *operand2));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertSMulWithOverflowIntrinsic(
+    const ::llvm::CallInst & instruction,
+    tacsvector_t & tacs,
+    Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(SMulWithOverflowOperation::createTac(*operand1, *operand2));
+
+  return tacs.back()->result(0);
+}
+
+static const Variable *
+convertUMulWithOverflowIntrinsic(
+    const ::llvm::CallInst & instruction,
+    tacsvector_t & tacs,
+    Context & context)
+{
+  const auto operand1 = ConvertValue(instruction.getArgOperand(0), tacs, context);
+  const auto operand2 = ConvertValue(instruction.getArgOperand(1), tacs, context);
+  tacs.push_back(UMulWithOverflowOperation::createTac(*operand1, *operand2));
 
   return tacs.back()->result(0);
 }
@@ -1390,13 +1703,22 @@ shouldIgnoreIntrinsic(::llvm::Intrinsic::ID intrinsicId)
 {
   switch (intrinsicId)
   {
+  // These intrinsics are ignored because jlm is currently unable to handle them. They only keep
+  // their arguments live as well as are otherwise converted to an ordinary call
+  // to an external function, serving as transformation bottleneck in the code.
+  case ::llvm::Intrinsic::assume:
+  case ::llvm::Intrinsic::expect:
+  case ::llvm::Intrinsic::prefetch:
+
   // These intrinsics are ignored because they take pointers to local variables,
   // reducing the precision of alias analysis unless specifically handled
   case ::llvm::Intrinsic::lifetime_start:
   case ::llvm::Intrinsic::lifetime_end:
+
   // This intrinsic is ignored because it takes a parameter of type "metadata"
   case ::llvm::Intrinsic::experimental_noalias_scope_decl:
     return true;
+
   default:
     return false;
   }
@@ -1408,23 +1730,102 @@ convertIntrinsicInstruction(
     tacsvector_t & threeAddressCodes,
     Context & context)
 {
-  if (shouldIgnoreIntrinsic(intrinsicInstruction.getIntrinsicID()))
-    return nullptr;
-
-  switch (intrinsicInstruction.getIntrinsicID())
+  switch (const auto intrinsicId = intrinsicInstruction.getIntrinsicID())
   {
+  case ::llvm::Intrinsic::abs:
+    return convertAbsIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::assume:
+  {
+    JLM_ASSERT(shouldIgnoreIntrinsic(intrinsicId));
+    return nullptr;
+  }
+  case ::llvm::Intrinsic::bswap:
+    return convertBSwapIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::ceil:
+    return convertCeilIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::copysign:
+    return convertCopysignIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::ctlz:
+    return convertCtlzIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::cttz:
+    return convertCttzIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::ctpop:
+    return convertCtpopIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::expect:
+  {
+    JLM_ASSERT(shouldIgnoreIntrinsic(intrinsicId));
+    return ConvertValue(intrinsicInstruction.getArgOperand(0), threeAddressCodes, context);
+  }
+  case ::llvm::Intrinsic::experimental_noalias_scope_decl:
+  {
+    JLM_ASSERT(shouldIgnoreIntrinsic(intrinsicId));
+    return nullptr;
+  }
+  case ::llvm::Intrinsic::fabs:
+    return convertFAbsIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::floor:
+    return convertFloorIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::fmuladd:
     return convertFMulAddIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::fshl:
+    return convertFShlIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::is_constant:
+    return convertIsConstantIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::is_fpclass:
+    return convertIsFPClassIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::lifetime_start:
+  case ::llvm::Intrinsic::lifetime_end:
+  {
+    JLM_ASSERT(shouldIgnoreIntrinsic(intrinsicId));
+    return nullptr;
+  }
   case ::llvm::Intrinsic::memcpy:
   case ::llvm::Intrinsic::memcpy_inline:
   case ::llvm::Intrinsic::memcpy_element_unordered_atomic:
     return convertMemCpyCall(&intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::memmove:
+  case ::llvm::Intrinsic::memmove_element_unordered_atomic:
+    return convertMemMoveCall(intrinsicInstruction, threeAddressCodes, context);
   case ::llvm::Intrinsic::memset:
   case ::llvm::Intrinsic::memset_inline:
   case ::llvm::Intrinsic::memset_element_unordered_atomic:
     return convertMemSetCall(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::prefetch:
+  {
+    JLM_ASSERT(shouldIgnoreIntrinsic(intrinsicId));
+    return nullptr;
+  }
+  case ::llvm::Intrinsic::ptrmask:
+    return convertPtrMaskIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::rint:
+    return convertRIntIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::round:
+    return convertRoundIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::sadd_with_overflow:
+    return convertSAddWithOverflowIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::smax:
+    return convertSMaxIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::smul_with_overflow:
+    return convertSMulWithOverflowIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::smin:
+    return convertSMinIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::ssub_with_overflow:
+    return convertSSubWithOverflowIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::trunc:
+    return convertTruncIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::uadd_with_overflow:
+    return convertUAddWithOverflowIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::umax:
+    return convertUMaxIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::umin:
+    return convertUMinIntrinsic(intrinsicInstruction, threeAddressCodes, context);
+  case ::llvm::Intrinsic::umul_with_overflow:
+    return convertUMulWithOverflowIntrinsic(intrinsicInstruction, threeAddressCodes, context);
   default:
+  {
+    JLM_ASSERT(!shouldIgnoreIntrinsic(intrinsicId));
     return createCall(intrinsicInstruction, threeAddressCodes, context);
+  }
   }
 }
 

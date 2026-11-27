@@ -8,6 +8,7 @@
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/rvsdg/graph.hpp>
+#include <jlm/rvsdg/NodeNormalization.hpp>
 
 namespace jlm::llvm
 {
@@ -202,6 +203,62 @@ TEST(GetElementPtrTests, TestGetElementPtrOperationConstant_OffestInBytes)
   EXPECT_EQ(constant3.getOffsetInBytes(), 8u);
   EXPECT_EQ(constant4.getOffsetInBytes(), 20u);
   EXPECT_EQ(constant5.getOffsetInBytes(), 32u);
+}
+
+TEST(GetElementPtrTests, normalizeIdempotentReduction)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  auto i32Type = BitType::Create(32);
+  auto pointerType = PointerType::Create();
+  auto structType = StructType::CreateLiteral({ i32Type, i32Type }, false);
+
+  Graph graph;
+
+  auto & pointerImport = GraphImport::Create(graph, pointerType, "");
+
+  auto & zero = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
+  auto & one = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 1);
+
+  auto & gepNode1 = GetElementPtrOperation::createNode(pointerImport, {}, i32Type);
+
+  auto & gepNode2 = GetElementPtrOperation::createNode(
+      pointerImport,
+      { zero.output(0), zero.output(0) },
+      structType);
+
+  auto & gepNode3 = GetElementPtrOperation::createNode(
+      pointerImport,
+      { zero.output(0), one.output(0) },
+      structType);
+
+  auto & x1 = GraphExport::Create(*gepNode1.output(0), "x1");
+  auto & x2 = GraphExport::Create(*gepNode2.output(0), "x2");
+  auto & x3 = GraphExport::Create(*gepNode3.output(0), "x3");
+
+  // Act
+  rvsdg::ReduceNode<GetElementPtrOperation>(GetElementPtrOperation::normalizeIdempotent, gepNode1);
+  rvsdg::ReduceNode<GetElementPtrOperation>(GetElementPtrOperation::normalizeIdempotent, gepNode2);
+  const auto successReductionGepNode3 = rvsdg::ReduceNode<GetElementPtrOperation>(
+      GetElementPtrOperation::normalizeIdempotent,
+      gepNode3);
+
+  // Assert
+  {
+    EXPECT_EQ(x1.origin(), &pointerImport);
+  }
+
+  {
+    EXPECT_EQ(x2.origin(), &pointerImport);
+  }
+
+  {
+    EXPECT_FALSE(successReductionGepNode3);
+    auto [gepNode, gepOperation] =
+        TryGetSimpleNodeAndOptionalOp<GetElementPtrOperation>(*x3.origin());
+    EXPECT_NE(gepOperation, nullptr);
+  }
 }
 
 }

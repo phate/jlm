@@ -4,11 +4,15 @@
  */
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/ConversionOperations.hpp>
+#include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
-#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/Trace.hpp>
+#include <jlm/rvsdg/delta.hpp>
+#include <jlm/rvsdg/lambda.hpp>
 #include <jlm/util/HashSet.hpp>
 
 namespace jlm::llvm
@@ -28,7 +32,7 @@ LoadNonVolatileOperation::operator==(const Operation & other) const noexcept
 std::string
 LoadNonVolatileOperation::debug_string() const
 {
-  return "Load";
+  return util::strfmt("Load[", GetLoadedType()->debug_string(), "]");
 }
 
 std::unique_ptr<rvsdg::Operation>
@@ -334,29 +338,67 @@ LoadNonVolatileOperation::NormalizeDuplicateStates(
   return std::nullopt;
 }
 
+static std::optional<size_t>
+getAllocationSizeInBytes(const rvsdg::Output & output)
+{
+  auto [allocaNode, allocaOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<AllocaOperation>(output);
+  if (allocaOperation)
+  {
+    return GetTypeAllocSize(*allocaOperation->allocatedType());
+  }
+
+  if (const auto deltaNode = rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(output))
+  {
+    const auto deltaOperation =
+        util::assertedCast<const LlvmDeltaOperation>(&deltaNode->GetOperation());
+    return GetTypeAllocSize(*deltaOperation->Type());
+  }
+
+  if (const auto llvmImport = dynamic_cast<const LlvmGraphImport *>(&output))
+  {
+    return GetTypeAllocSize(*llvmImport->ValueType());
+  }
+
+  return std::nullopt;
+}
+
 std::optional<std::vector<rvsdg::Output *>>
-LoadNonVolatileOperation::NormalizeIOBarrierAllocaAddress(
-    const LoadNonVolatileOperation & operation,
+LoadNonVolatileOperation::normalizeMemoryHoistBarrierAddress(
+    const LoadNonVolatileOperation & loadOperation,
     const std::vector<rvsdg::Output *> & operands)
 {
   JLM_ASSERT(operands.size() >= 1);
   const auto address = operands[0];
 
-  auto [ioBarrierNode, ioBarrierOperation] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(*address);
-  if (!ioBarrierOperation)
+  auto [hoistBarrierNode, hoistBarrierOp] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryHoistBarrierOperation>(*address);
+  if (!hoistBarrierOp)
     return std::nullopt;
 
-  auto & barredAddress = *IOBarrierOperation::BarredInput(*ioBarrierNode).origin();
-  const auto & tracedAddress = llvm::traceOutput(barredAddress);
-  if (!rvsdg::IsOwnerNodeOperation<AllocaOperation>(tracedAddress))
+  auto & barredAddress = *MemoryHoistBarrierOperation::getAddressInput(*hoistBarrierNode).origin();
+  const auto & pointerOrigin = TracePointerOriginPrecise(barredAddress);
+  const auto allocationSizeInBytes = getAllocationSizeInBytes(*pointerOrigin.BasePointer);
+  if (!allocationSizeInBytes.has_value())
+    return std::nullopt;
+
+  size_t offsetInBytes = 0;
+  if (const auto offsetInBytesOpt = pointerOrigin.getOffsetInBytes(); offsetInBytesOpt.has_value())
+  {
+    offsetInBytes = offsetInBytesOpt.value();
+  }
+
+  // This transformation is only valid if the affected bytes by the load operation are within the
+  // size of the allocation site.
+  if (offsetInBytes + GetTypeStoreSize(*loadOperation.GetLoadedType())
+      > allocationSizeInBytes.value())
     return std::nullopt;
 
   auto & loadNode = CreateNode(
       barredAddress,
       { std::next(operands.begin()), operands.end() },
-      operation.GetLoadedType(),
-      operation.GetAlignment());
+      loadOperation.GetLoadedType(),
+      loadOperation.GetAlignment());
 
   return { outputs(&loadNode) };
 }

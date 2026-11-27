@@ -17,7 +17,7 @@
 #include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -100,15 +100,18 @@ AggregateAllocaSplitting::isSplitableType(const rvsdg::Type & type)
 {
   // FIXME: We currently only look at alloca nodes with a struct type. We might be able
   // to do something for alloca nodes with array types as well.
+
+  // FIXME: The current implementation checks that all subtypes of the struct type are splitable.
+  // We should be able to handle a struct type with at least one non-splitable subtype.
   const auto structType = dynamic_cast<const StructType *>(&type);
-  if (!structType)
+  if (!structType || structType->numElements() == 0)
     return false;
 
   for (const auto & elementType : structType->elementTypes())
   {
-    if (IsAggregateType(*elementType))
+    if (IsAggregateType(*elementType) && !isSplitableType(*elementType))
     {
-      return isSplitableType(*elementType);
+      return false;
     }
   }
 
@@ -381,9 +384,9 @@ AggregateAllocaSplitting::checkGetElementPtrUsers(const rvsdg::SimpleNode & gepN
 
                     return true;
                   },
-                  [&](const IOBarrierOperation &)
+                  [&](const MemoryHoistBarrierOperation &)
                   {
-                    addToVisitSet(*simpleNode.output(0));
+                    addToVisitSet(MemoryHoistBarrierOperation::getAddressOutput(simpleNode));
                     return true;
                   },
                   [&]()

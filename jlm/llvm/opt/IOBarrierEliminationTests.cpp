@@ -1,0 +1,754 @@
+/*
+ * Copyright 2026 Nico Reißmann <nico.reissmann@gmail.com>
+ * See COPYING for terms of redistribution.
+ */
+
+#include <gtest/gtest.h>
+
+#include <jlm/llvm/ir/operators/IOBarrier.hpp>
+#include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/opt/IOBarrierElimination.hpp>
+#include <jlm/rvsdg/bitstring/type.hpp>
+#include <jlm/rvsdg/control.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/lambda.hpp>
+#include <jlm/rvsdg/TestNodes.hpp>
+#include <jlm/rvsdg/TestOperations.hpp>
+#include <jlm/util/Statistics.hpp>
+
+namespace jlm::llvm
+{
+
+static void
+runIOBarrierElimination(LlvmRvsdgModule & rvsdgModule)
+{
+
+  util::StatisticsCollector statisticsCollector;
+  IOBarrierElimination ioBarrierElimination;
+  ioBarrierElimination.Run(rvsdgModule, statisticsCollector);
+}
+
+TEST(IOBarrierEliminationTests, testLambdaArgument)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  auto i32Type = BitType::Create(32);
+  auto pointerType = PointerType::Create();
+  auto ioStateType = IOStateType::Create();
+  auto functionType = FunctionType::Create({ pointerType, ioStateType }, { i32Type, ioStateType });
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+  auto ptrArgument = lambdaNode->GetFunctionArguments()[0];
+  auto ioStateArgument = lambdaNode->GetFunctionArguments()[1];
+
+  auto & hoistBarrierNode =
+      MemoryHoistBarrierOperation::createNode(*ptrArgument, *ioStateArgument, 0);
+
+  auto & loadNode =
+      LoadNonVolatileOperation::CreateNode(*hoistBarrierNode.output(0), {}, i32Type, 4);
+
+  auto lambdaOutput = lambdaNode->finalize({ loadNode.output(0), ioStateArgument });
+  GraphExport::Create(*lambdaOutput, "test");
+
+  // Act
+  runIOBarrierElimination(*rvsdgModule);
+
+  // Assert
+  // We expect the MemoryHoistBarrierOperation node connected to a lambda argument to NOT be
+  // eliminated
+  EXPECT_TRUE(Region::containsOperation<MemoryHoistBarrierOperation>(rvsdg.GetRootRegion(), true));
+}
+
+TEST(IOBarrierEliminationTests, testSizeIsRespected)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  auto i8Type = BitType::Create(8);
+  auto i32Type = BitType::Create(32);
+  auto pointerType = PointerType::Create();
+  auto ioStateType = IOStateType::Create();
+  auto functionType =
+      FunctionType::Create({ pointerType, ioStateType }, { i8Type, i32Type, ioStateType });
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+  auto ptrArgument = lambdaNode->GetFunctionArguments()[0];
+  auto ioStateArgument = lambdaNode->GetFunctionArguments()[1];
+
+  auto & loadNode1 = LoadNonVolatileOperation::CreateNode(*ptrArgument, {}, i8Type, 4);
+
+  auto testNode =
+      TestOperation::createNode(lambdaNode->subregion(), { ioStateArgument }, { ioStateType });
+
+  auto & hoistBarrierNode =
+      MemoryHoistBarrierOperation::createNode(*ptrArgument, *testNode->output(0), 0);
+
+  auto & loadNode2 =
+      LoadNonVolatileOperation::CreateNode(*hoistBarrierNode.output(0), {}, i32Type, 4);
+
+  auto lambdaOutput =
+      lambdaNode->finalize({ loadNode1.output(0), loadNode2.output(0), testNode->output(0) });
+  GraphExport::Create(*lambdaOutput, "test");
+
+  // Act
+  runIOBarrierElimination(*rvsdgModule);
+
+  // Assert
+  // We expect the MemoryHoistBarrierOperation node to NOT be eliminated as loadNode1 marks the
+  // pointer argument only dereferenceable with size i8, but loadNode2 requires size i32.
+  EXPECT_TRUE(Region::containsOperation<MemoryHoistBarrierOperation>(rvsdg.GetRootRegion(), true));
+}
+
+TEST(IOBarrierEliminationTests, testSuccess)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  auto i32Type = BitType::Create(32);
+  auto i64Type = BitType::Create(64);
+  auto pointerType = PointerType::Create();
+  auto ioStateType = IOStateType::Create();
+  auto functionType =
+      FunctionType::Create({ pointerType, ioStateType }, { i64Type, i32Type, ioStateType });
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+  auto ptrArgument = lambdaNode->GetFunctionArguments()[0];
+  auto ioStateArgument = lambdaNode->GetFunctionArguments()[1];
+
+  auto & loadNode1 = LoadNonVolatileOperation::CreateNode(*ptrArgument, {}, i64Type, 4);
+
+  auto testNode =
+      TestOperation::createNode(lambdaNode->subregion(), { ioStateArgument }, { ioStateType });
+
+  auto & hoistBarrierNode =
+      MemoryHoistBarrierOperation::createNode(*ptrArgument, *testNode->output(0), 0);
+
+  auto & loadNode2 =
+      LoadNonVolatileOperation::CreateNode(*hoistBarrierNode.output(0), {}, i32Type, 4);
+
+  auto lambdaOutput =
+      lambdaNode->finalize({ loadNode1.output(0), loadNode2.output(0), testNode->output(0) });
+  GraphExport::Create(*lambdaOutput, "test");
+
+  // Act
+  runIOBarrierElimination(*rvsdgModule);
+
+  // Assert
+  // We expect the MemoryHoistBarrierOperation node to be eliminated as loadNode1 marks the pointer
+  // argument dereferenceable with size i64, but loadNode2 only requires size i32.
+  EXPECT_FALSE(Region::containsOperation<MemoryHoistBarrierOperation>(rvsdg.GetRootRegion(), true));
+}
+
+TEST(IOBarrierEliminationTests, testInvidiualIOBarrierUserRerouting)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  auto i8Type = BitType::Create(8);
+  auto i32Type = BitType::Create(32);
+  auto i64Type = BitType::Create(64);
+  auto pointerType = PointerType::Create();
+  auto ioStateType = IOStateType::Create();
+  auto functionType =
+      FunctionType::Create({ pointerType, ioStateType }, { i32Type, i8Type, i64Type, ioStateType });
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+  auto ptrArgument = lambdaNode->GetFunctionArguments()[0];
+  auto ioStateArgument = lambdaNode->GetFunctionArguments()[1];
+
+  auto & load32Node = LoadNonVolatileOperation::CreateNode(*ptrArgument, {}, i32Type, 4);
+
+  auto testNode =
+      TestOperation::createNode(lambdaNode->subregion(), { ioStateArgument }, { ioStateType });
+
+  auto & hoistBarrierNode =
+      MemoryHoistBarrierOperation::createNode(*ptrArgument, *testNode->output(0), 0);
+
+  auto & load8Node =
+      LoadNonVolatileOperation::CreateNode(*hoistBarrierNode.output(0), {}, i8Type, 4);
+
+  auto & load64Node =
+      LoadNonVolatileOperation::CreateNode(*hoistBarrierNode.output(0), {}, i64Type, 4);
+
+  auto lambdaOutput = lambdaNode->finalize(
+      { load32Node.output(0), load8Node.output(0), load64Node.output(0), testNode->output(0) });
+  GraphExport::Create(*lambdaOutput, "test");
+
+  // Act
+  runIOBarrierElimination(*rvsdgModule);
+
+  // Assert
+  EXPECT_TRUE(Region::containsOperation<MemoryHoistBarrierOperation>(rvsdg.GetRootRegion(), true));
+
+  // We expect that the load8Node is not any longer barred behind the MemoryHoistBarrierOperation
+  // node as ptrArgument is dereferenceable for 32 bits.
+  EXPECT_EQ(LoadOperation::AddressInput(load8Node).origin(), ptrArgument);
+
+  // We expect that the load64Node is still barred behind the MemoryHoistBarrierOperation node as
+  // ptrArgument is only dereferenceable for 32 bits.
+  {
+    auto [mhbNode, mhbOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryHoistBarrierOperation>(
+        *LoadOperation::AddressInput(load64Node).origin());
+    EXPECT_NE(mhbOp, nullptr);
+    EXPECT_EQ(mhbOp->getDereferenceableSize(), 4);
+  }
+}
+
+TEST(IOBarrierEliminationTests, testGamma)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  auto i32Type = BitType::Create(32);
+  auto i64Type = BitType::Create(64);
+  auto controlType = ControlType::Create(2);
+  auto pointerType = PointerType::Create();
+  auto ioStateType = IOStateType::Create();
+  auto functionType = FunctionType::Create(
+      { pointerType, controlType, ioStateType },
+      { i32Type, i32Type, ioStateType });
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+  auto ptrArgument = lambdaNode->GetFunctionArguments()[0];
+  auto controlArgument = lambdaNode->GetFunctionArguments()[1];
+  auto ioStateArgument = lambdaNode->GetFunctionArguments()[2];
+
+  auto & loadNode = LoadNonVolatileOperation::CreateNode(*ptrArgument, {}, i32Type, 4);
+
+  auto gammaNode = GammaNode::create(controlArgument, 2);
+  auto ptrEntryVar = gammaNode->AddEntryVar(ptrArgument);
+  auto ioStateEntryVar = gammaNode->AddEntryVar(ioStateArgument);
+
+  // subregion 0
+  auto & hoistBarrierNode0 = MemoryHoistBarrierOperation::createNode(
+      *ptrEntryVar.branchArgument[0],
+      *ioStateEntryVar.branchArgument[0],
+      0);
+  auto & load32Node =
+      LoadNonVolatileOperation::CreateNode(*hoistBarrierNode0.output(0), {}, i32Type, 4);
+
+  // subregion 1
+  auto & hoistBarrierNode1 = MemoryHoistBarrierOperation::createNode(
+      *ptrEntryVar.branchArgument[1],
+      *ioStateEntryVar.branchArgument[1],
+      0);
+  auto & load64Node =
+      LoadNonVolatileOperation::CreateNode(*hoistBarrierNode1.output(0), {}, i64Type, 4);
+  auto testNode =
+      TestOperation::createNode(gammaNode->subregion(1), { load64Node.output(0) }, { i32Type });
+
+  // gamma exit
+  auto i32ExitVar = gammaNode->AddExitVar({ load32Node.output(0), testNode->output(0) });
+  auto ioStateExitVar = gammaNode->AddExitVar(
+      { ioStateEntryVar.branchArgument[0], ioStateEntryVar.branchArgument[1] });
+
+  auto lambdaOutput =
+      lambdaNode->finalize({ loadNode.output(0), i32ExitVar.output, ioStateExitVar.output });
+  GraphExport::Create(*lambdaOutput, "test");
+
+  // Act
+  runIOBarrierElimination(*rvsdgModule);
+
+  // Assert
+  // We expect the MemoryHoistBarrierOperation node in gamma subregion 0 to be eliminated
+  EXPECT_FALSE(
+      Region::containsOperation<MemoryHoistBarrierOperation>(*gammaNode->subregion(0), true));
+
+  // We expect the MemoryHoistBarrierOperation nodes in gamma subregion 1 NOT to be eliminated
+  EXPECT_TRUE(
+      Region::containsOperation<MemoryHoistBarrierOperation>(*gammaNode->subregion(1), true));
+}
+
+TEST(IOBarrierEliminationTests, testOnlyLoadsInGamma)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  auto i32Type = BitType::Create(32);
+  auto controlType = ControlType::Create(2);
+  auto pointerType = PointerType::Create();
+  auto ioStateType = IOStateType::Create();
+  auto functionType =
+      FunctionType::Create({ pointerType, controlType, ioStateType }, { i32Type, ioStateType });
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+  auto ptrArgument = lambdaNode->GetFunctionArguments()[0];
+  auto controlArgument = lambdaNode->GetFunctionArguments()[1];
+  auto ioStateArgument = lambdaNode->GetFunctionArguments()[2];
+
+  auto outerGammaNode = GammaNode::create(controlArgument, 2);
+  auto outerPtrEntryVar = outerGammaNode->AddEntryVar(ptrArgument);
+  auto outerCtlEntryVar = outerGammaNode->AddEntryVar(controlArgument);
+  auto outerIOStateEntryVar = outerGammaNode->AddEntryVar(ioStateArgument);
+
+  // outerGammaNode - subregion 0
+  auto & mhbNode1 = MemoryHoistBarrierOperation::createNode(
+      *outerPtrEntryVar.branchArgument[0],
+      *outerIOStateEntryVar.branchArgument[0],
+      0);
+  auto & load32Node1 = LoadNonVolatileOperation::CreateNode(*mhbNode1.output(0), {}, i32Type, 4);
+
+  // outerGammaNode - subregion 1
+  auto innerGammaNode = GammaNode::create(outerCtlEntryVar.branchArgument[1], 2);
+  auto innerPtrEntryVar = innerGammaNode->AddEntryVar(outerPtrEntryVar.branchArgument[1]);
+  auto innerIOStateEntryVar = innerGammaNode->AddEntryVar(outerIOStateEntryVar.branchArgument[1]);
+
+  // innerGammaNode - subregion 0
+  auto & mhbNode2 = MemoryHoistBarrierOperation::createNode(
+      *innerPtrEntryVar.branchArgument[0],
+      *innerIOStateEntryVar.branchArgument[0],
+      0);
+  auto & load32Node2 = LoadNonVolatileOperation::CreateNode(*mhbNode2.output(0), {}, i32Type, 4);
+
+  // innerGammaNode - subregion 1
+  auto & mhbNode3 = MemoryHoistBarrierOperation::createNode(
+      *innerPtrEntryVar.branchArgument[1],
+      *innerIOStateEntryVar.branchArgument[1],
+      0);
+  auto & load32Node3 = LoadNonVolatileOperation::CreateNode(*mhbNode3.output(0), {}, i32Type, 4);
+
+  // innerGammaNode - finalize
+  auto innerI32ExitVar =
+      innerGammaNode->AddExitVar({ load32Node2.output(0), load32Node3.output(0) });
+  auto innerIOStateExitVar = innerGammaNode->AddExitVar(
+      { innerIOStateEntryVar.branchArgument[0], innerIOStateEntryVar.branchArgument[1] });
+
+  // outerGammaNode - finalize
+  auto outerI32ExitVar =
+      outerGammaNode->AddExitVar({ load32Node1.output(0), innerI32ExitVar.output });
+  auto outerIOStateExitVar = outerGammaNode->AddExitVar(
+      { outerIOStateEntryVar.branchArgument[0], innerIOStateExitVar.output });
+
+  auto lambdaOutput = lambdaNode->finalize({ outerI32ExitVar.output, outerIOStateExitVar.output });
+  GraphExport::Create(*lambdaOutput, "test");
+
+  // Act
+  runIOBarrierElimination(*rvsdgModule);
+
+  // Assert
+
+  {
+    auto [mhbNode, mhbOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryHoistBarrierOperation>(
+        *outerPtrEntryVar.input->origin());
+    EXPECT_NE(mhbOp, nullptr);
+    EXPECT_EQ(mhbOp->getDereferenceableSize(), 0u);
+  }
+
+  // FIXME: Preferably, I would have liked for this MemoryHoistBarrierOperation nodes to be
+  // eliminated, but we need to improve the sweep phase first.
+  {
+    auto [mhbNode, mhbOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryHoistBarrierOperation>(
+        *innerPtrEntryVar.input->origin());
+    EXPECT_NE(mhbOp, nullptr);
+    EXPECT_EQ(mhbOp->getDereferenceableSize(), 4u);
+  }
+}
+
+TEST(IOBarrierEliminationTests, testOnlyLoadsInGammaFailure)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  auto i32Type = BitType::Create(32);
+  auto controlType = ControlType::Create(2);
+  auto pointerType = PointerType::Create();
+  auto ioStateType = IOStateType::Create();
+  auto functionType =
+      FunctionType::Create({ pointerType, controlType, ioStateType }, { i32Type, ioStateType });
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+  auto ptrArgument = lambdaNode->GetFunctionArguments()[0];
+  auto controlArgument = lambdaNode->GetFunctionArguments()[1];
+  auto ioStateArgument = lambdaNode->GetFunctionArguments()[2];
+
+  auto gammaNode = GammaNode::create(controlArgument, 2);
+  auto ptrEntryVar = gammaNode->AddEntryVar(ptrArgument);
+  auto ioStateEntryVar = gammaNode->AddEntryVar(ioStateArgument);
+
+  // outerGammaNode - subregion 0
+  auto & mhbNode1 = MemoryHoistBarrierOperation::createNode(
+      *ptrEntryVar.branchArgument[0],
+      *ioStateEntryVar.branchArgument[0],
+      0);
+  auto & load32Node1 = LoadNonVolatileOperation::CreateNode(*mhbNode1.output(0), {}, i32Type, 4);
+
+  // outerGammaNode - subregion 1
+  auto testNode = TestOperation::createNode(
+      gammaNode->subregion(1),
+      { ioStateEntryVar.branchArgument[1] },
+      { ioStateType });
+  auto & mhbNode2 = MemoryHoistBarrierOperation::createNode(
+      *ptrEntryVar.branchArgument[1],
+      *testNode->output(0),
+      0);
+  auto & load32Node2 = LoadNonVolatileOperation::CreateNode(*mhbNode2.output(0), {}, i32Type, 4);
+
+  // outerGammaNode - finalize
+  auto outerI32ExitVar = gammaNode->AddExitVar({ load32Node1.output(0), load32Node2.output(0) });
+  auto outerIOStateExitVar =
+      gammaNode->AddExitVar({ ioStateEntryVar.branchArgument[0], testNode->output(0) });
+
+  auto lambdaOutput = lambdaNode->finalize({ outerI32ExitVar.output, outerIOStateExitVar.output });
+  GraphExport::Create(*lambdaOutput, "test");
+
+  // Act
+  runIOBarrierElimination(*rvsdgModule);
+
+  // Assert
+  // We would expect no MemoryHoistBarrierOperation node in the lambda subregion.
+  EXPECT_FALSE(
+      Region::containsOperation<MemoryHoistBarrierOperation>(*lambdaNode->subregion(), false));
+}
+
+TEST(IOBarrierEliminationTests, testLoadsInGammaNoReturn)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  auto i32Type = BitType::Create(32);
+  auto controlType = ControlType::Create(2);
+  auto pointerType = PointerType::Create();
+  auto ioStateType = IOStateType::Create();
+  auto functionType =
+      FunctionType::Create({ pointerType, controlType, ioStateType }, { i32Type, ioStateType });
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+  auto ptrArgument = lambdaNode->GetFunctionArguments()[0];
+  auto controlArgument = lambdaNode->GetFunctionArguments()[1];
+  auto ioStateArgument = lambdaNode->GetFunctionArguments()[2];
+
+  auto upperGammaNode = GammaNode::create(controlArgument, 2);
+  auto upperPtrEntryVar = upperGammaNode->AddEntryVar(ptrArgument);
+  auto upperIOStateEntryVar = upperGammaNode->AddEntryVar(ioStateArgument);
+
+  // upperGammaNode - subregion 0
+  auto & mhbNode1 = MemoryHoistBarrierOperation::createNode(
+      *upperPtrEntryVar.branchArgument[0],
+      *upperIOStateEntryVar.branchArgument[0],
+      0);
+  auto & load32Node1 = LoadNonVolatileOperation::CreateNode(*mhbNode1.output(0), {}, i32Type, 4);
+
+  // upperGammaNode - subregion 1
+  auto testNode = TestOperation::createNode(
+      upperGammaNode->subregion(1),
+      { upperIOStateEntryVar.branchArgument[1] },
+      { ioStateType });
+  auto & mhbNode2 = MemoryHoistBarrierOperation::createNode(
+      *upperPtrEntryVar.branchArgument[1],
+      *testNode->output(0),
+      0);
+  auto & load32Node2 = LoadNonVolatileOperation::CreateNode(*mhbNode2.output(0), {}, i32Type, 4);
+
+  // upperGammaNode - finalize
+  auto upperI32ExitVar =
+      upperGammaNode->AddExitVar({ load32Node1.output(0), load32Node2.output(0) });
+  auto upperIOStateExitVar =
+      upperGammaNode->AddExitVar({ upperIOStateEntryVar.branchArgument[0], testNode->output(0) });
+
+  auto lowerGammaNode = GammaNode::create(controlArgument, 2);
+  auto lowerPtrEntryVar = lowerGammaNode->AddEntryVar(ptrArgument);
+  auto lowerIOStateEntryVar = lowerGammaNode->AddEntryVar(upperIOStateExitVar.output);
+
+  // lowerGammaNode - subregion 0
+  auto & mhbNode3 = MemoryHoistBarrierOperation::createNode(
+      *lowerPtrEntryVar.branchArgument[0],
+      *lowerIOStateEntryVar.branchArgument[0],
+      0);
+  auto & load32Node3 = LoadNonVolatileOperation::CreateNode(*mhbNode3.output(0), {}, i32Type, 4);
+
+  // lowerGammaNode - subregion 1
+  auto & mhbNode4 = MemoryHoistBarrierOperation::createNode(
+      *lowerPtrEntryVar.branchArgument[1],
+      *lowerIOStateEntryVar.branchArgument[1],
+      0);
+  auto & load32Node4 = LoadNonVolatileOperation::CreateNode(*mhbNode4.output(0), {}, i32Type, 4);
+
+  // lowerGammaNode - finalize
+  auto lowerI32ExitVar =
+      lowerGammaNode->AddExitVar({ load32Node3.output(0), load32Node4.output(0) });
+  auto lowerIOStateExitVar = lowerGammaNode->AddExitVar(
+      { lowerIOStateEntryVar.branchArgument[0], lowerIOStateEntryVar.branchArgument[1] });
+
+  auto testNode2 = TestOperation::createNode(
+      lambdaNode->subregion(),
+      { upperI32ExitVar.output, lowerI32ExitVar.output },
+      { i32Type });
+
+  auto lambdaOutput = lambdaNode->finalize({ testNode2->output(0), lowerIOStateExitVar.output });
+  GraphExport::Create(*lambdaOutput, "test");
+
+  // Act
+  runIOBarrierElimination(*rvsdgModule);
+
+  // Assert
+  // We would expect no MemoryHoistBarrierOperation node in the lowerGamma subregions.
+  EXPECT_FALSE(
+      Region::containsOperation<MemoryHoistBarrierOperation>(*lowerGammaNode->subregion(0), false));
+  EXPECT_FALSE(
+      Region::containsOperation<MemoryHoistBarrierOperation>(*lowerGammaNode->subregion(1), false));
+
+  // We would expect a MemoryHoistBarrierOperation node with size=0 before the ptr entry variable of
+  // lowerGammaNode.
+  {
+    auto [mhbNode, mhbOpt] = TryGetSimpleNodeAndOptionalOp<MemoryHoistBarrierOperation>(
+        *lowerPtrEntryVar.input->origin());
+    EXPECT_NE(mhbOpt, nullptr);
+    EXPECT_EQ(mhbOpt->getDereferenceableSize(), 0u);
+  }
+
+  // We would expect a MemoryHoistBarrierOperation node in each of the upperGamma subregions.
+  EXPECT_TRUE(
+      Region::containsOperation<MemoryHoistBarrierOperation>(*upperGammaNode->subregion(0), false));
+  EXPECT_TRUE(
+      Region::containsOperation<MemoryHoistBarrierOperation>(*upperGammaNode->subregion(1), false));
+}
+
+TEST(IOBarrierEliminationTest, testNormalizeation)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  auto pointerType = PointerType::Create();
+  auto ioStateType = IOStateType::Create();
+  auto functionType = FunctionType::Create(
+      { pointerType, ioStateType },
+      { pointerType, pointerType, pointerType, pointerType, pointerType, ioStateType });
+
+  Graph rvsdg;
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+  auto ptrArgument = lambdaNode->GetFunctionArguments()[0];
+  auto ioStateArgument = lambdaNode->GetFunctionArguments()[1];
+
+  auto & hoistBarrierNode0 =
+      MemoryHoistBarrierOperation::createNode(*ptrArgument, *ioStateArgument, 0);
+
+  auto structuralNode = TestStructuralNode::create(lambdaNode->subregion(), 2);
+  auto ptrInputVar = structuralNode->addInputWithArguments(*ptrArgument);
+  auto ioStateInputVar = structuralNode->addInputWithArguments(*ioStateArgument);
+
+  // subregion 0
+  auto & hoistBarrierNode1 = MemoryHoistBarrierOperation::createNode(
+      *ptrInputVar.argument[0],
+      *ioStateInputVar.argument[0],
+      0);
+
+  // subregion 1
+  // Nothing needs to be done
+
+  // finalize
+  auto ptrOutputVar1 = structuralNode->addOutputWithResults(
+      { hoistBarrierNode1.output(0), ptrInputVar.argument[1] });
+  auto ptrOutputVar2 =
+      structuralNode->addOutputWithResults({ ptrInputVar.argument[0], ptrInputVar.argument[1] });
+  auto ioStateOutputVar = structuralNode->addOutputWithResults(
+      { ioStateInputVar.argument[0], ioStateInputVar.argument[1] });
+
+  auto & hoistBarrierNode2 =
+      MemoryHoistBarrierOperation::createNode(*ptrOutputVar1.output, *ioStateOutputVar.output, 0);
+
+  auto & hoistBarrierNode3 =
+      MemoryHoistBarrierOperation::createNode(*ptrArgument, *ioStateOutputVar.output, 0);
+
+  auto lambdaOutput = lambdaNode->finalize({ hoistBarrierNode0.output(0),
+                                             hoistBarrierNode2.output(0),
+                                             ptrOutputVar1.output,
+                                             ptrOutputVar2.output,
+                                             hoistBarrierNode3.output(0),
+                                             ioStateOutputVar.output });
+  GraphExport::Create(*lambdaOutput, "test");
+
+  // Act
+  IOBarrierElimination::normalizeMemoryHoistBarriers(rvsdg.GetRootRegion());
+
+  // Assert
+  EXPECT_EQ(ptrArgument->nusers(), 1);
+  EXPECT_EQ(ptrInputVar.argument[0]->nusers(), 1);
+  EXPECT_EQ(ptrOutputVar1.output->nusers(), 1);
+
+  EXPECT_EQ(ptrInputVar.input->origin(), hoistBarrierNode0.output(0));
+  EXPECT_EQ(ptrOutputVar2.result[0]->origin(), hoistBarrierNode1.output(0));
+  EXPECT_EQ(lambdaNode->GetFunctionResults()[2]->origin(), hoistBarrierNode2.output(0));
+  EXPECT_EQ(
+      MemoryHoistBarrierOperation::getAddressInput(hoistBarrierNode3).origin(),
+      hoistBarrierNode0.output(0));
+}
+
+TEST(IOBarrierElimination, testStoreMarking)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  auto i32Type = BitType::Create(32);
+  auto controlType = ControlType::Create(2);
+  auto pointerType = PointerType::Create();
+  auto ioStateType = IOStateType::Create();
+  auto memoryState = MemoryStateType::Create();
+  auto functionType = FunctionType::Create(
+      { pointerType, i32Type, controlType, ioStateType, memoryState },
+      { i32Type, ioStateType, memoryState });
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+  auto ptrArgument = lambdaNode->GetFunctionArguments()[0];
+  auto i32Argument = lambdaNode->GetFunctionArguments()[1];
+  auto controlArgument = lambdaNode->GetFunctionArguments()[2];
+  auto ioStateArgument = lambdaNode->GetFunctionArguments()[3];
+  auto memoryStateArgument = lambdaNode->GetFunctionArguments()[4];
+
+  auto & storeNode =
+      StoreNonVolatileOperation::CreateNode(*ptrArgument, *i32Argument, { memoryStateArgument }, 4);
+
+  auto gammaNode = GammaNode::create(controlArgument, 2);
+  auto ptrEntryVar = gammaNode->AddEntryVar(ptrArgument);
+  auto ioStateEntryVar = gammaNode->AddEntryVar(ioStateArgument);
+  auto i32EntryVar = gammaNode->AddEntryVar(i32Argument);
+  auto memoryStateEntryVar = gammaNode->AddEntryVar(storeNode.output(0));
+
+  // subregion 0
+  auto & hoistBarrierNode = MemoryHoistBarrierOperation::createNode(
+      *ptrEntryVar.branchArgument[0],
+      *ioStateEntryVar.branchArgument[0],
+      0);
+  auto & load32Node = LoadNonVolatileOperation::CreateNode(
+      *hoistBarrierNode.output(0),
+      { memoryStateEntryVar.branchArgument[0] },
+      i32Type,
+      4);
+
+  // subregion 1
+  // Nothing needs to be done
+
+  auto i32ExitVar = gammaNode->AddExitVar(
+      { &LoadOperation::LoadedValueOutput(load32Node), i32EntryVar.branchArgument[1] });
+  auto ioStateExitVar = gammaNode->AddExitVar(
+      { ioStateEntryVar.branchArgument[0], ioStateEntryVar.branchArgument[1] });
+  auto memoryStateExitVar =
+      gammaNode->AddExitVar({ load32Node.output(1), memoryStateEntryVar.branchArgument[1] });
+
+  auto lambdaOutput =
+      lambdaNode->finalize({ i32ExitVar.output, ioStateExitVar.output, memoryStateExitVar.output });
+  GraphExport::Create(*lambdaOutput, "test");
+
+  // Act
+  runIOBarrierElimination(*rvsdgModule);
+
+  // Assert
+  // We expect both MemoryHoistBarrierOperation nodes to be eliminated
+  EXPECT_FALSE(
+      Region::containsOperation<MemoryHoistBarrierOperation>(*lambdaNode->subregion(), true));
+}
+
+TEST(IOBarrierEliminationTests, testNormalizationFromLoadedAddress)
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  auto i32Type = BitType::Create(32);
+  auto pointerType = PointerType::Create();
+  auto ioStateType = IOStateType::Create();
+  auto controlType = ControlType::Create(2);
+  auto functionType = FunctionType::Create({ pointerType, ioStateType }, { i32Type, ioStateType });
+
+  auto rvsdgModule = LlvmRvsdgModule::Create(util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
+  auto ptrArgument = lambdaNode->GetFunctionArguments()[0];
+  auto ioStateArgument = lambdaNode->GetFunctionArguments()[1];
+
+  auto & loadNode1 = LoadNonVolatileOperation::CreateNode(*ptrArgument, {}, pointerType, 4);
+
+  auto & hoistBarrierNode1 = MemoryHoistBarrierOperation::createNode(
+      LoadOperation::LoadedValueOutput(loadNode1),
+      *ioStateArgument,
+      0);
+  auto & loadNode2 =
+      LoadNonVolatileOperation::CreateNode(*hoistBarrierNode1.output(0), {}, i32Type, 4);
+
+  auto testNode = TestOperation::createNode(lambdaNode->subregion(), {}, { controlType });
+  auto gammaNode = GammaNode::create(testNode->output(0), 2);
+  auto ptrEntryVar = gammaNode->AddEntryVar(&LoadOperation::LoadedValueOutput(loadNode1));
+  auto i32EntryVar = gammaNode->AddEntryVar(&LoadOperation::LoadedValueOutput(loadNode2));
+  auto ioStateEntryVar = gammaNode->AddEntryVar(ioStateArgument);
+
+  // subregion 0
+  auto & hoistBarrierNode2 = MemoryHoistBarrierOperation::createNode(
+      *ptrEntryVar.branchArgument[0],
+      *ioStateEntryVar.branchArgument[0],
+      0);
+  auto & loadNode3 =
+      LoadNonVolatileOperation::CreateNode(*hoistBarrierNode2.output(0), {}, i32Type, 4);
+
+  // subregion 1
+  // Nothing needs to be done
+
+  auto i32ExitVar = gammaNode->AddExitVar(
+      { &LoadOperation::LoadedValueOutput(loadNode3), i32EntryVar.branchArgument[1] });
+  auto ioStateExitVar = gammaNode->AddExitVar(
+      { ioStateEntryVar.branchArgument[0], ioStateEntryVar.branchArgument[1] });
+
+  auto lambdaOutput = lambdaNode->finalize({ i32ExitVar.output, ioStateExitVar.output });
+  GraphExport::Create(*lambdaOutput, "test");
+
+  // Act
+  IOBarrierElimination::normalizeMemoryHoistBarriers(rvsdg.GetRootRegion());
+
+  // Assert
+  // We expect the origin of the ptrEntryVar to be the outermost MemoryHoistBarrierOperation node
+  EXPECT_EQ(ptrEntryVar.input->origin(), hoistBarrierNode1.output(0));
+}
+
+}

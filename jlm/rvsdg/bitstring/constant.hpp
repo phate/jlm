@@ -11,7 +11,7 @@
 #include <jlm/rvsdg/bitstring/value-representation.hpp>
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/nullary.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 
 #include <vector>
 

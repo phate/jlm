@@ -122,7 +122,7 @@ GetElementPtrOperation::getIndexedType(
     if (auto structType = std::dynamic_pointer_cast<const StructType>(currentType))
     {
       auto index = indices[n];
-      auto & tracedIndex = llvm::traceOutput(*index);
+      auto & tracedIndex = llvm::traceOutput(*index, false);
       auto [constantNode, constantOperation] =
           rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(tracedIndex);
       if (!constantOperation)
@@ -154,6 +154,26 @@ GetElementPtrOperation::getIndexedType(
   }
 
   return currentType;
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+GetElementPtrOperation::normalizeIdempotent(
+    const GetElementPtrOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() >= 1);
+  auto baseAddress = operands[0];
+
+  for (size_t n = 1; n < operands.size(); ++n)
+  {
+    auto intOpt = tryGetConstantSignedInteger(*operands[n]);
+    if (!intOpt.has_value() || intOpt.value() != 0)
+      return std::nullopt;
+  }
+
+  // At this point we know that either there are no index operands or that all indices are zero. We
+  // can just return the base address.
+  return std::vector({ baseAddress });
 }
 
 }

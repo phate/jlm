@@ -5,6 +5,7 @@
 
 #include <jlm/llvm/ir/operators/AggregateOperations.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/GeneralIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
@@ -649,6 +650,10 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
       {
         AnalyzeGep(node);
       },
+      [&](const PtrMaskOperation &)
+      {
+        AnalyzePtrMask(node);
+      },
       [&](const BitCastOperation &)
       {
         AnalyzeBitcast(node);
@@ -685,6 +690,10 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
       {
         AnalyzeMemset(node);
       },
+      [&](const MemMoveOperation &)
+      {
+        AnalyzeMemmove(node);
+      },
       [&](const ConstantArrayOperation &)
       {
         AnalyzeConstantArray(node);
@@ -717,9 +726,9 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
       {
         AnalyzeFunctionToPointer(node);
       },
-      [&](const IOBarrierOperation &)
+      [&](const MemoryHoistBarrierOperation &)
       {
-        AnalyzeIOBarrier(node);
+        AnalyzeMemoryHoistBarrier(node);
       },
       [&](const FreeOperation &)
       {
@@ -843,6 +852,20 @@ Andersen::AnalyzeGep(const rvsdg::SimpleNode & node)
 }
 
 void
+Andersen::AnalyzePtrMask(const rvsdg::SimpleNode & node)
+{
+  JLM_ASSERT(is<PtrMaskOperation>(node.GetOperation()));
+
+  // FIXME: What about vector of pointers?
+  const auto & baseRegister = *node.input(0)->origin();
+  JLM_ASSERT(is<PointerType>(baseRegister.Type()));
+
+  const auto baseRegisterPO = Set_->GetRegisterPointerObject(baseRegister);
+  const auto & outputRegister = *node.output(0);
+  Set_->MapRegisterToExistingPointerObject(outputRegister, baseRegisterPO);
+}
+
+void
 Andersen::AnalyzeBitcast(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<BitCastOperation>(node.GetOperation()));
@@ -948,6 +971,28 @@ void
 Andersen::AnalyzeMemcpy(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<MemCpyOperation>(node.GetOperation()));
+
+  auto & dstAddressRegister = *node.input(0)->origin();
+  auto & srcAddressRegister = *node.input(1)->origin();
+  JLM_ASSERT(is<PointerType>(dstAddressRegister.Type()));
+  JLM_ASSERT(is<PointerType>(srcAddressRegister.Type()));
+
+  const auto dstAddressRegisterPO = Set_->GetRegisterPointerObject(dstAddressRegister);
+  const auto srcAddressRegisterPO = Set_->GetRegisterPointerObject(srcAddressRegister);
+
+  // Create an intermediate PointerObject representing the moved values
+  const auto dummyPO = Set_->CreateDummyRegisterPointerObject();
+
+  // Add a "load" constraint from the source into the dummy register
+  Constraints_->AddConstraint(LoadConstraint(dummyPO, srcAddressRegisterPO));
+  // Add a "store" constraint from the dummy register into the destination
+  Constraints_->AddConstraint(StoreConstraint(dstAddressRegisterPO, dummyPO));
+}
+
+void
+Andersen::AnalyzeMemmove(const rvsdg::SimpleNode & node)
+{
+  JLM_ASSERT(is<MemMoveOperation>(node.GetOperation()));
 
   auto & dstAddressRegister = *node.input(0)->origin();
   auto & srcAddressRegister = *node.input(1)->origin();
@@ -1142,17 +1187,13 @@ Andersen::AnalyzeFunctionToPointer(const rvsdg::SimpleNode & node)
 }
 
 void
-Andersen::AnalyzeIOBarrier(const rvsdg::SimpleNode & node)
+Andersen::AnalyzeMemoryHoistBarrier(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<IOBarrierOperation>(node.GetOperation()));
+  JLM_ASSERT(is<MemoryHoistBarrierOperation>(node.GetOperation()));
 
-  const auto operation = util::assertedCast<const IOBarrierOperation>(&node.GetOperation());
-  if (!IsOrContainsPointerType(*operation->Type()))
-    return;
-
-  const auto & inputRegister = *node.input(0)->origin();
+  const auto & inputRegister = *MemoryHoistBarrierOperation::getAddressInput(node).origin();
   const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
-  const auto & outputRegister = *node.output(0);
+  const auto & outputRegister = MemoryHoistBarrierOperation::getAddressOutput(node);
   Set_->MapRegisterToExistingPointerObject(outputRegister, inputRegisterPO);
 }
 

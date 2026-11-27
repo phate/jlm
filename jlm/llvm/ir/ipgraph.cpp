@@ -9,6 +9,8 @@
 
 #include <algorithm>
 #include <fstream>
+#include <jlm/rvsdg/MatchType.hpp>
+#include <llvm/IR/Function.h>
 
 /* Tarjan's SCC algorithm */
 
@@ -126,6 +128,66 @@ InterProceduralGraph::toDot(
   }
 
   return dotGraph;
+}
+
+std::string
+InterProceduralGraph::toAscii(const InterProceduralGraph & interProceduralGraph)
+{
+  std::string str;
+  for (const auto & node : interProceduralGraph)
+  {
+    auto nodeStr = rvsdg::MatchTypeWithDefault(
+        node,
+        [](const FunctionNode & functionNode)
+        {
+          const auto & functionType = functionNode.fcttype();
+
+          // convert result types
+          std::string results("<");
+          for (size_t n = 0; n < functionType.NumResults(); n++)
+          {
+            results += functionType.ResultType(n).debug_string();
+            if (n != functionType.NumResults() - 1)
+              results += ", ";
+          }
+          results += ">";
+
+          // convert operand types
+          std::string operands("<");
+          for (size_t n = 0; n < functionType.NumArguments(); n++)
+          {
+            operands += functionType.ArgumentType(n).debug_string();
+            if (n != functionType.NumArguments() - 1)
+              operands += ", ";
+          }
+          operands += ">";
+
+          std::string cfg =
+              functionNode.cfg() ? ControlFlowGraph::ToAscii(*functionNode.cfg()) : "";
+          std::string exported = isPrivateOrInternal(functionNode.linkage()) ? "static" : "";
+
+          return exported + results + " " + functionNode.name() + " " + operands + "\n{\n" + cfg
+               + "\n}\n";
+        },
+        [](const DataNode & dataNode)
+        {
+          std::string str = dataNode.name() + " = ";
+          if (auto init = dataNode.initialization())
+          {
+            for (const auto & tac : init->tacs())
+              str += ThreeAddressCode::ToAscii(*tac) + ", ";
+          }
+
+          return str;
+        },
+        []() -> std::string
+        {
+          throw std::runtime_error("Unsupported node type");
+        });
+    str += nodeStr + "\n";
+  }
+
+  return str;
 }
 
 void

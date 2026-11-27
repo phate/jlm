@@ -9,20 +9,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  UnitTests:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-      - name: "Run unit tests and C tests"
-        uses: ./.github/actions/BuildJlm
-        with:
-          enable-hls: true
-          enable-mlir: true
-          make-target: check
-
   UnitTestsWithValgrind:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
+      - name: "Update dependencies"
+        run: sudo apt-get update
       - uses: actions/checkout@v4
       - name: "Run unit tests with valgrind"
         uses: ./.github/actions/BuildJlm
@@ -32,38 +23,45 @@ jobs:
           make-target: valgrind-check
 
   polybench:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: "Build jlm"
         uses: ./.github/actions/BuildJlm
+        with:
+          make-target: 'all-without-tests'
       - name: "Run polybench"
         run: ./scripts/run-polybench.sh
 
   llvm-test-suite:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: "Build jlm"
         uses: ./.github/actions/BuildJlm
+        with:
+          make-target: 'all-without-tests'
       - name: "Run the llvm-test-suite-opt"
         run: ./scripts/run-llvm-test-suite.sh --make-target llvm-run-opt
 
   llvm-test-suite-andersen-agnostic:
-    if: contains(github.event.pull_request.title, '[AndersenAgnostic]')
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: "Build jlm"
         uses: ./.github/actions/BuildJlm
+        with:
+          make-target: 'all-without-tests'
       - name: "Run the llvm-test-suite-andersen-agnostic"
         run: ./scripts/run-llvm-test-suite.sh --make-target llvm-run-andersen-agnostic
 
   llvm-test-suite-andersen-region-aware:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: "Build jlm"
         uses: ./.github/actions/BuildJlm
+        with:
+          make-target: 'all-without-tests'
       - name: "Run the llvm-test-suite-andersen-region-aware"
         run: ./scripts/run-llvm-test-suite.sh --make-target llvm-run-andersen-region-aware

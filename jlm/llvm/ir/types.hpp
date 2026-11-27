@@ -17,6 +17,56 @@
 namespace jlm::llvm
 {
 
+/**
+ * JLM's equivalent of LLVM's IntegerType class.
+ */
+class IntegerType final : public rvsdg::Type
+{
+public:
+  ~IntegerType() noexcept override;
+
+  explicit constexpr IntegerType(const size_t numBits)
+      : numBits_(numBits)
+  {}
+
+  size_t
+  numBits() const noexcept
+  {
+    return numBits_;
+  }
+
+  [[nodiscard]] std::string
+  debug_string() const override;
+
+  bool
+  operator==(const Type & other) const noexcept override;
+
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
+
+  rvsdg::TypeKind
+  Kind() const noexcept override;
+
+  /**
+   * \brief Creates integer type of specified width
+   *
+   * \param numBits
+   *    Width of type
+   *
+   * \returns
+   *    Type representing integer of specified width.
+   *
+   * Returns an instance of an integer type with specified
+   * width. Usually this returns a singleton object instance
+   * for the type.
+   */
+  static std::shared_ptr<const IntegerType>
+  create(std::size_t numBits);
+
+private:
+  size_t numBits_;
+};
+
 /** \brief PointerType class
  *
  * This operator is the Jlm equivalent of LLVM's PointerType class.
@@ -110,6 +160,7 @@ private:
 enum class fpsize
 {
   half,
+  bfloat,
   flt,
   dbl,
   x86fp80,
@@ -550,6 +601,26 @@ isVectorOf(const rvsdg::Type & type)
 
   auto vectorType = dynamic_cast<const VectorType *>(&type);
   return vectorType && rvsdg::is<T>(vectorType->Type());
+}
+
+/**
+ * Checks if \p type is a vector of type \p T with size \p size.
+ *
+ * @tparam T The element type of the vector.
+ * @param type The type to check.
+ * @param size The size of the vector.
+ * @return True, if it is a vector of type \p T, otherwise false.
+ */
+template<class T>
+bool
+isVectorOfSize(const rvsdg::Type & type, const size_t size)
+{
+  static_assert(
+      std::is_base_of_v<rvsdg::Type, T>,
+      "Template parameter T must be derived from jlm::rvsdg::Type.");
+
+  auto vectorType = dynamic_cast<const VectorType *>(&type);
+  return vectorType && rvsdg::is<T>(vectorType->Type()) && vectorType->size() == size;
 }
 
 /**

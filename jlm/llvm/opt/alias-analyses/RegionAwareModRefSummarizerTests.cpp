@@ -17,7 +17,7 @@
 #include <jlm/llvm/opt/alias-analyses/ModRefSummary.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/TestRvsdgs.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/SimpleNode.hpp>
 #include <jlm/rvsdg/UnitType.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/common.hpp>
@@ -1674,9 +1674,8 @@ TEST(RegionAwareModRefSummarizerTests, testSetjmpHandling)
 
   // Check the statistics to ensure that the right functions in the call graph were marked
   auto & statistic = *collector.CollectedStatistics().begin();
-  // Only k() is not in the same SCC as <external>
-  EXPECT_EQ(statistic.GetMeasurementValue<uint64_t>("#CallGraphSccs"), 2u);
-  // g(), k() and h() are the only functions within an active setjmp
+  EXPECT_EQ(statistic.GetMeasurementValue<uint64_t>("#Functions"), 4u);
+  // Only g() calls setjmp
   EXPECT_EQ(statistic.GetMeasurementValue<uint64_t>("#FunctionsCallingSetjmp"), 1u);
 }
 
@@ -1805,13 +1804,19 @@ TEST(RegionAwareModRefSummarizerTests, TestStatistics)
   EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#RvsdgRegions"), 2u);
   EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#PointsToGraphMemoryNodes"), 7u);
   EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#SimpleAllocas"), 5u);
-  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#NonReentrantAllocas"), 5u);
-  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#CallGraphSccs"), 2u);
+  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#Functions"), 1u);
+  EXPECT_EQ(statistics.GetMeasurementValue<uint64_t>("#FunctionsCallingSetjmp"), 0u);
+  EXPECT_EQ(
+      statistics.GetMeasurementValue<std::string>("MemoryStateDistribution"),
+      "LAMBDA[f]-LAMBDA[f]-(0:0)-0-0,LAMBDA[f]-ALLOCA[bit32]-(1:1)-0-1,LAMBDA[f]-ALLOCA[bit32]-(1:"
+      "2)-0-1,LAMBDA[f]-ALLOCA[ptr]-(1:3)-0-1,LAMBDA[f]-ALLOCA[ptr]-(1:4)-0-1,LAMBDA[f]-ALLOCA[ptr]"
+      "-(1:5)-0-1,LAMBDA[f]-Store[ptr]-(1:11)-1-1,LAMBDA[f]-Store[ptr]-(1:12)-1-1,LAMBDA[f]-Store["
+      "ptr]-(1:13)-1-1,LAMBDA[f]-Load[ptr]-(1:14)-1-1,LAMBDA[f]-Load[ptr]-(1:15)-1-1,LAMBDA[f]-"
+      "Store[ptr]-(1:16)-1-1");
 
-  EXPECT_TRUE(statistics.HasTimer("CallGraphTimer"));
   EXPECT_TRUE(statistics.HasTimer("SimpleAllocasSetTimer"));
-  EXPECT_TRUE(statistics.HasTimer("NonReentrantAllocaSetsTimer"));
   EXPECT_TRUE(statistics.HasTimer("AnnotationTimer"));
   EXPECT_TRUE(statistics.HasTimer("SolvingTimer"));
+  EXPECT_TRUE(statistics.HasTimer("ReadOnlyDetectionTimer"));
   EXPECT_TRUE(statistics.HasTimer("ModRefSetMaterializationTimer"));
 }

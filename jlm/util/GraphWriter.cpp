@@ -266,8 +266,9 @@ void
 GraphElement::SetProgramObjectUintptr(uintptr_t object)
 {
   JLM_ASSERT(object);
+  // If the GraphElement was already associated with a program object, remove the old mapping first
   if (ProgramObject_ != 0)
-    GetGraph().RemoveProgramObjectMapping(ProgramObject_);
+    GetGraph().RemoveProgramObjectMapping(*this);
   ProgramObject_ = object;
   if (ProgramObject_ != 0)
     GetGraph().MapProgramObjectToElement(*this);
@@ -1545,13 +1546,24 @@ Graph::MapProgramObjectToElement(GraphElement & element)
   auto & slot = ProgramObjectMapping_[object];
   JLM_ASSERT(slot == nullptr && "Trying to map a GraphElement to an already mapped program object");
   slot = &element;
+
+  // In addition to adding the element to the Graph's mapping,
+  // the GraphWriter has its own mapping containing elements from all graphs
+  GetWriter().mapProgramObjectToElement(element);
 }
 
 void
-Graph::RemoveProgramObjectMapping(uintptr_t object)
+Graph::RemoveProgramObjectMapping(GraphElement & element)
 {
+  JLM_ASSERT(&element.GetGraph() == this);
+
+  auto object = element.GetProgramObject();
+  JLM_ASSERT(object != 0);
+
   size_t erased = ProgramObjectMapping_.erase(object);
   JLM_ASSERT(erased == 1);
+
+  GetWriter().removeProgramObjectMapping(element);
 }
 
 void
@@ -1779,11 +1791,39 @@ Writer::CreateSubGraph(Node & parentNode)
 GraphElement *
 Writer::GetElementFromProgramObject(uintptr_t object) const
 {
-  for (auto & graph : Graphs_)
-    if (auto found = graph->GetElementFromProgramObject(object))
-      return found;
-
+  if (auto it = ProgramObjectMapping_.find(object); it != ProgramObjectMapping_.end())
+    return it->second;
   return nullptr;
+}
+
+void
+Writer::mapProgramObjectToElement(GraphElement & element)
+{
+  JLM_ASSERT(&element.GetGraph().GetWriter() == this);
+
+  uintptr_t object = element.GetProgramObject();
+  JLM_ASSERT(object != 0);
+
+  // This may override an existing mapping,
+  // if multiple graphs contain elements representing the same program object
+  ProgramObjectMapping_[object] = &element;
+}
+
+void
+Writer::removeProgramObjectMapping(GraphElement & element)
+{
+  JLM_ASSERT(&element.GetGraph().GetWriter() == this);
+
+  uintptr_t object = element.GetProgramObject();
+  JLM_ASSERT(object != 0);
+
+  // If the pair (object, &element) exists in the writer's mapping, remove it
+  if (auto it = ProgramObjectMapping_.find(object); it != ProgramObjectMapping_.end())
+  {
+    // Check that there is not some other GraphElement currently mapped to the object
+    if (it->second == &element)
+      ProgramObjectMapping_.erase(it);
+  }
 }
 
 size_t

@@ -5,6 +5,7 @@
  */
 
 #include <jlm/rvsdg/lambda.hpp>
+#include <jlm/rvsdg/region.hpp>
 #include <jlm/util/strfmt.hpp>
 
 namespace jlm::rvsdg
@@ -103,7 +104,7 @@ LambdaNode::MapBinderContextVar(const rvsdg::Output & output) const noexcept
 std::variant<LambdaNode::ArgumentVar, LambdaNode::ContextVar>
 LambdaNode::MapArgument(const rvsdg::Output & output) const
 {
-  JLM_ASSERT(rvsdg::TryGetOwnerNode<LambdaNode>(output) == this);
+  JLM_ASSERT(rvsdg::TryGetRegionParentNode<LambdaNode>(output) == this);
   std::size_t nargs = GetOperation().Type()->NumArguments();
   if (output.index() < nargs)
   {

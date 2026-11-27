@@ -323,6 +323,177 @@ private:
   }
 };
 
+// FIXME: Remove again once conversion from BitType to IntegerType is completed.
+class BitToIntegerTypeOperation final : public rvsdg::UnaryOperation
+{
+public:
+  ~BitToIntegerTypeOperation() noexcept override;
+
+  explicit BitToIntegerTypeOperation(std::shared_ptr<const rvsdg::BitType> operandType)
+      : UnaryOperation(std::move(operandType), IntegerType::create(operandType->nbits()))
+  {}
+
+  BitToIntegerTypeOperation(
+      const std::shared_ptr<const rvsdg::Type> & operandType,
+      const std::shared_ptr<const rvsdg::Type> & resultType)
+      : UnaryOperation(operandType, resultType)
+  {
+
+    const auto bitType = dynamic_cast<const rvsdg::BitType *>(operandType.get());
+    if (!bitType)
+      throw std::runtime_error("expected bitstring type.");
+
+    const auto integerType = dynamic_cast<const IntegerType *>(resultType.get());
+    if (!integerType)
+      throw std::runtime_error("expected integer type.");
+
+    if (bitType->nbits() != integerType->numBits())
+      throw std::runtime_error("bitstring and integer types must have the same number of bits.");
+  }
+
+  [[nodiscard]] std::shared_ptr<const rvsdg::BitType>
+  getBitType() const
+  {
+    return std::dynamic_pointer_cast<const rvsdg::BitType>(argument(0));
+  }
+
+  [[nodiscard]] std::shared_ptr<const IntegerType>
+  getIntegerType() const
+  {
+    return std::dynamic_pointer_cast<const IntegerType>(result(0));
+  }
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  [[nodiscard]] std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  static std::unique_ptr<ThreeAddressCode>
+  createTac(const Variable * operand, std::shared_ptr<const rvsdg::Type> resultType)
+  {
+    auto operation =
+        std::make_unique<BitToIntegerTypeOperation>(operand->Type(), std::move(resultType));
+    return ThreeAddressCode::create(std::move(operation), { operand });
+  }
+
+  static rvsdg::SimpleNode &
+  createNode(rvsdg::Output & operand, std::shared_ptr<const rvsdg::Type> resultType)
+  {
+    return rvsdg::CreateOpNode<BitToIntegerTypeOperation>(
+        { &operand },
+        operand.Type(),
+        std::move(resultType));
+  }
+
+  /**
+   * Removes a \ref BitToIntegerTypeOperation node whose operand is produced by an
+   * \ref IntegerToBitTypeOperation node:
+   *
+   * integer = BitToIntegerTypeOperation(IntegerToBitTypeOperation(bit))
+   * =>
+   * integer = bit
+   *
+   * @param operation The \ref BitToIntegerTypeOperation on which the transformation is performed.
+   * @param operands The operands of the \ref BitToIntegerTypeOperation node.
+   *
+   * @return If the normalization could be applied, then the results of the
+   * \ref BitToIntegerTypeOperation after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeInverse(
+      const BitToIntegerTypeOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+};
+
+// FIXME: Remove again once conversion from BitType to IntegerType is completed.
+class IntegerToBitTypeOperation final : public rvsdg::UnaryOperation
+{
+public:
+  ~IntegerToBitTypeOperation() noexcept override;
+
+  explicit IntegerToBitTypeOperation(const std::shared_ptr<const IntegerType> & operandType)
+      : UnaryOperation(operandType, rvsdg::BitType::Create(operandType->numBits()))
+  {}
+
+  IntegerToBitTypeOperation(
+      const std::shared_ptr<const rvsdg::Type> & operandType,
+      const std::shared_ptr<const rvsdg::Type> & resultType)
+      : UnaryOperation(operandType, resultType)
+  {
+    const auto integerType = dynamic_cast<const IntegerType *>(operandType.get());
+    if (!integerType)
+      throw std::runtime_error("expected integer type.");
+
+    const auto bitType = dynamic_cast<const rvsdg::BitType *>(resultType.get());
+    if (!bitType)
+      throw std::runtime_error("expected bitstring type.");
+
+    if (integerType->numBits() != bitType->nbits())
+      throw std::runtime_error("integer and bitstring types must have the same number of bits.");
+  }
+
+  [[nodiscard]] std::shared_ptr<const IntegerType>
+  getIntegerType() const
+  {
+    return std::dynamic_pointer_cast<const IntegerType>(argument(0));
+  }
+
+  [[nodiscard]] std::shared_ptr<const rvsdg::BitType>
+  getBitType() const
+  {
+    return std::dynamic_pointer_cast<const rvsdg::BitType>(result(0));
+  }
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  [[nodiscard]] std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  static std::unique_ptr<ThreeAddressCode>
+  createTac(const Variable * operand, std::shared_ptr<const rvsdg::Type> resultType)
+  {
+    auto operation =
+        std::make_unique<IntegerToBitTypeOperation>(operand->Type(), std::move(resultType));
+    return ThreeAddressCode::create(std::move(operation), { operand });
+  }
+
+  static rvsdg::SimpleNode &
+  createNode(rvsdg::Output & operand, std::shared_ptr<const rvsdg::Type> resultType)
+  {
+    return rvsdg::CreateOpNode<IntegerToBitTypeOperation>(
+        { &operand },
+        operand.Type(),
+        std::move(resultType));
+  }
+
+  /**
+   * Removes an \ref IntegerToBitTypeOperation node whose operand is produced by a
+   * \ref BitToIntegerTypeOperation node:
+   *
+   * bit = IntegerToBitTypeOperation(BitToIntegerTypeOperation(integer))
+   * =>
+   * bit = integer
+   *
+   * @param operation The \ref IntegerToBitTypeOperation on which the transformation is performed.
+   * @param operands The operands of the \ref IntegerToBitTypeOperation node.
+   *
+   * @return If the normalization could be applied, then the results of the
+   * \ref IntegerToBitTypeOperation after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeInverse(
+      const IntegerToBitTypeOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+};
+
 class PtrToIntOperation final : public rvsdg::UnaryOperation
 {
 public:
@@ -392,28 +563,23 @@ public:
   }
 
   FPExtOperation(
-      const std::shared_ptr<const FloatingPointType> & srctype,
-      const std::shared_ptr<const FloatingPointType> & dsttype)
-      : UnaryOperation(srctype, dsttype)
+      const std::shared_ptr<const FloatingPointType> & operandType,
+      const std::shared_ptr<const FloatingPointType> & resultType)
+      : UnaryOperation(operandType, resultType)
   {
-    if (srctype->size() == fpsize::flt && dsttype->size() == fpsize::half)
+    if (operandType->size() == fpsize::flt && resultType->size() == fpsize::half)
       throw util::Error("destination type size must be bigger than source type size.");
   }
 
   FPExtOperation(
-      std::shared_ptr<const jlm::rvsdg::Type> srctype,
-      std::shared_ptr<const jlm::rvsdg::Type> dsttype)
-      : UnaryOperation(srctype, dsttype)
+      const std::shared_ptr<const rvsdg::Type> & operandType,
+      const std::shared_ptr<const rvsdg::Type> & resultType)
+      : UnaryOperation(operandType, resultType)
   {
-    auto st = dynamic_cast<const FloatingPointType *>(srctype.get());
-    if (!st)
-      throw util::Error("expected floating point type.");
+    auto & operandFpType = checkAndExtractFloatingPointType(*operandType);
+    auto & resultTFpType = checkAndExtractFloatingPointType(*resultType);
 
-    auto dt = dynamic_cast<const FloatingPointType *>(dsttype.get());
-    if (!dt)
-      throw util::Error("expected floating point type.");
-
-    if (st->size() == fpsize::flt && dt->size() == fpsize::half)
+    if (operandFpType.size() == fpsize::flt && resultTFpType.size() == fpsize::half)
       throw util::Error("destination type size must be bigger than source type size.");
   }
 
@@ -439,18 +605,39 @@ public:
   }
 
   static std::unique_ptr<llvm::ThreeAddressCode>
-  create(const Variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
+  create(const Variable * operand, const std::shared_ptr<const rvsdg::Type> & resultType)
   {
-    auto st = std::dynamic_pointer_cast<const FloatingPointType>(operand->Type());
-    if (!st)
-      throw util::Error("expected floating point type.");
-
-    auto dt = std::dynamic_pointer_cast<const FloatingPointType>(type);
-    if (!dt)
-      throw util::Error("expected floating point type.");
-
-    auto op = std::make_unique<FPExtOperation>(std::move(st), std::move(dt));
+    auto op = std::make_unique<FPExtOperation>(operand->Type(), resultType);
     return ThreeAddressCode::create(std::move(op), { operand });
+  }
+
+  static rvsdg::SimpleNode &
+  createNode(rvsdg::Output & operand, const std::shared_ptr<const rvsdg::Type> & resultType)
+  {
+    return rvsdg::CreateOpNode<FPExtOperation>({ &operand }, operand.Type(), resultType);
+  }
+
+  /**
+   * Performs constant folding by statically evaluating the constant operand and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref FPExtOperation on which the transformation is performed.
+   * @param operands The operands of the \ref FPExtOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref FPExtOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstant(const FPExtOperation & operation, const std::vector<rvsdg::Output *> & operands);
+
+private:
+  static const FloatingPointType &
+  checkAndExtractFloatingPointType(const rvsdg::Type & type)
+  {
+    if (const auto fpType = dynamic_cast<const FloatingPointType *>(&type))
+      return *fpType;
+
+    throw util::Error("Expected floating point type.");
   }
 };
 
@@ -477,20 +664,16 @@ public:
   }
 
   FPTruncOperation(
-      std::shared_ptr<const jlm::rvsdg::Type> srctype,
-      std::shared_ptr<const jlm::rvsdg::Type> dsttype)
-      : UnaryOperation(srctype, dsttype)
+      const std::shared_ptr<const rvsdg::Type> & operandType,
+      const std::shared_ptr<const rvsdg::Type> & resultType)
+      : UnaryOperation(operandType, resultType)
   {
-    auto st = dynamic_cast<const FloatingPointType *>(srctype.get());
-    if (!st)
-      throw util::Error("expected floating point type.");
+    auto & operandFpType = checkAndExtractFloatingPointType(*operandType);
+    auto & resultTFpType = checkAndExtractFloatingPointType(*resultType);
 
-    auto dt = dynamic_cast<const FloatingPointType *>(dsttype.get());
-    if (!dt)
-      throw util::Error("expected floating point type.");
-
-    if (st->size() == fpsize::half || (st->size() == fpsize::flt && dt->size() != fpsize::half)
-        || (st->size() == fpsize::dbl && dt->size() == fpsize::dbl))
+    if (operandFpType.size() == fpsize::half
+        || (operandFpType.size() == fpsize::flt && resultTFpType.size() != fpsize::half)
+        || (operandFpType.size() == fpsize::dbl && resultTFpType.size() == fpsize::dbl))
       throw util::Error("destination type size must be smaller than source size type.");
   }
 
@@ -516,18 +699,39 @@ public:
   }
 
   static std::unique_ptr<llvm::ThreeAddressCode>
-  create(const Variable * operand, std::shared_ptr<const jlm::rvsdg::Type> type)
+  create(const Variable * operand, std::shared_ptr<const jlm::rvsdg::Type> resultType)
   {
-    auto st = std::dynamic_pointer_cast<const FloatingPointType>(operand->Type());
-    if (!st)
-      throw util::Error("expected floating point type.");
-
-    auto dt = std::dynamic_pointer_cast<const FloatingPointType>(type);
-    if (!dt)
-      throw util::Error("expected floating point type.");
-
-    auto op = std::make_unique<FPTruncOperation>(std::move(st), std::move(dt));
+    auto op = std::make_unique<FPTruncOperation>(operand->Type(), resultType);
     return ThreeAddressCode::create(std::move(op), { operand });
+  }
+
+  static rvsdg::SimpleNode &
+  createNode(rvsdg::Output & operand, const std::shared_ptr<const rvsdg::Type> & resultType)
+  {
+    return rvsdg::CreateOpNode<FPTruncOperation>({ &operand }, operand.Type(), resultType);
+  }
+
+  /**
+   * Performs constant folding by statically evaluating the constant operand and replacing the
+   * operations result with the resulting constant.
+   *
+   * @param operation The \ref FPTruncOperation on which the transformation is performed.
+   * @param operands The operands of the \ref FPTruncOperation node.
+   *
+   * @return If the normalization could be applied, then the result of the \ref FPTruncOperation
+   * after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  foldConstant(const FPTruncOperation & operation, const std::vector<rvsdg::Output *> & operands);
+
+private:
+  static const FloatingPointType &
+  checkAndExtractFloatingPointType(const rvsdg::Type & type)
+  {
+    if (const auto fpType = dynamic_cast<const FloatingPointType *>(&type))
+      return *fpType;
+
+    throw util::Error("Expected floating point type.");
   }
 };
 
@@ -892,6 +1096,18 @@ public:
   FunctionType() const noexcept
   {
     return FunctionType_;
+  }
+
+  static rvsdg::SimpleNode &
+  createNode(rvsdg::Output & operand)
+  {
+    const auto functionType = std::dynamic_pointer_cast<const rvsdg::FunctionType>(operand.Type());
+    if (!functionType)
+    {
+      throw std::logic_error("Expect function type.");
+    }
+
+    return rvsdg::CreateOpNode<FunctionToPointerOperation>({ &operand }, functionType);
   }
 
   /**

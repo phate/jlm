@@ -4,15 +4,18 @@
  */
 
 #include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
-#include <jlm/llvm/ir/basic-block.hpp>
+#include <jlm/llvm/ir/BasicBlock.hpp>
 #include <jlm/llvm/ir/CallingConvention.hpp>
-#include <jlm/llvm/ir/cfg-node.hpp>
-#include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators/AggregateOperations.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/ArithmeticWithOverflowIntrinsicOperations.hpp>
+#include <jlm/llvm/ir/operators/BitManipulationIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
+#include <jlm/llvm/ir/operators/FloatingPointMinMaxIntrinsicOperations.hpp>
+#include <jlm/llvm/ir/operators/FloatingPointTestIntrinsicOperations.hpp>
+#include <jlm/llvm/ir/operators/GeneralIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
@@ -166,10 +169,8 @@ IpGraphToLlvmConverter::CreateICmpInstruction(
 }
 
 static ::llvm::APInt
-convert_bitvalue_repr(const rvsdg::BitValueRepresentation & vr)
+convert_bitvalue_repr(const IntegerValueRepresentation & vr)
 {
-  JLM_ASSERT(vr.is_defined());
-
   std::string str = vr.str();
   std::reverse(str.begin(), str.end());
 
@@ -186,10 +187,7 @@ IpGraphToLlvmConverter::ConverterIntegerConstant(
       util::assertedCast<const IntegerConstantOperation>(&op)->Representation();
   const auto type = ::llvm::IntegerType::get(builder.getContext(), representation.nbits());
 
-  if (representation.is_defined())
-    return ::llvm::ConstantInt::get(type, convert_bitvalue_repr(representation));
-
-  return ::llvm::UndefValue::get(type);
+  return ::llvm::ConstantInt::get(type, convert_bitvalue_repr(representation));
 }
 
 ::llvm::Value *
@@ -347,22 +345,28 @@ IpGraphToLlvmConverter::convert_branch(
 }
 
 ::llvm::Value *
-IpGraphToLlvmConverter::convert_phi(
-    const rvsdg::SimpleOperation & op,
+IpGraphToLlvmConverter::convertSsaPhiOperation(
+    const SsaPhiOperation & phiOp,
     const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> & builder)
 {
-  auto & phi = *util::assertedCast<const SsaPhiOperation>(&op);
   auto & llvmContext = Context_->llvm_module().getContext();
   auto & typeConverter = Context_->GetTypeConverter();
+  auto phiType = phiOp.Type();
 
-  if (rvsdg::is<IOStateType>(phi.Type()))
+  if (rvsdg::is<IOStateType>(phiType))
     return nullptr;
-  if (rvsdg::is<MemoryStateType>(phi.Type()))
+  if (rvsdg::is<MemoryStateType>(phiType))
     return nullptr;
 
-  auto t = typeConverter.ConvertJlmType(*phi.Type(), llvmContext);
-  return builder.CreatePHI(t, op.narguments());
+  // Functions are represented as pointers in LLVM IR, so a phi over function
+  // values must be created as a phi over pointers. Creating it with the
+  // function's FunctionType would mismatch the types of the incoming values,
+  // which are the pointer-typed LLVM functions.
+  if (rvsdg::is<rvsdg::FunctionType>(phiType))
+    phiType = PointerType::Create();
+
+  return builder.CreatePHI(typeConverter.ConvertJlmType(*phiType, llvmContext), phiOp.narguments());
 }
 
 ::llvm::Value *
@@ -544,10 +548,10 @@ IpGraphToLlvmConverter::convert(
 
   if (auto ft = dynamic_cast<const FloatingPointType *>(&op.type()->element_type()))
   {
-    if (ft->size() == fpsize::half)
+    if (ft->size() == fpsize::half || ft->size() == fpsize::bfloat)
     {
       auto data = get_fpdata<uint16_t>(operands);
-      auto type = ::llvm::Type::getBFloatTy(builder.getContext());
+      auto type = Context_->GetTypeConverter().ConvertJlmType(*ft, builder.getContext());
       return ::llvm::ConstantDataArray::getFP(type, data);
     }
     else if (ft->size() == fpsize::flt)
@@ -800,10 +804,10 @@ IpGraphToLlvmConverter::convert_constantdatavector(
 
   if (auto ft = dynamic_cast<const FloatingPointType *>(&cop.type()))
   {
-    if (ft->size() == fpsize::half)
+    if (ft->size() == fpsize::half || ft->size() == fpsize::bfloat)
     {
       auto data = get_fpdata<uint16_t>(operands);
-      auto type = ::llvm::Type::getBFloatTy(builder.getContext());
+      auto type = Context_->GetTypeConverter().ConvertJlmType(*ft, builder.getContext());
       return ::llvm::ConstantDataVector::getFP(type, data);
     }
     else if (ft->size() == fpsize::flt)
@@ -1205,6 +1209,10 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return Context_->value(arguments[0]);
   }
+  if (is<MemoryHoistBarrierOperation>(op))
+  {
+    return Context_->value(arguments[0]);
+  }
   if (is<IntegerConstantOperation>(op))
   {
     return ConverterIntegerConstant(op, arguments, builder);
@@ -1241,9 +1249,9 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_branch(op, arguments, builder);
   }
-  if (is<SsaPhiOperation>(op))
+  if (const auto ssaPhiOperation = dynamic_cast<const SsaPhiOperation *>(&op))
   {
-    return convert_phi(op, arguments, builder);
+    return convertSsaPhiOperation(*ssaPhiOperation, arguments, builder);
   }
   if (is<LoadNonVolatileOperation>(op))
   {
@@ -1313,6 +1321,10 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_ctl2bits(op, arguments, builder);
   }
+  if (is<BitToIntegerTypeOperation>(op) || is<IntegerToBitTypeOperation>(op))
+  {
+    return Context_->value(arguments[0]);
+  }
   if (is<ConstantVectorOperation>(op))
   {
     return convert_constantvector(op, arguments, builder);
@@ -1376,6 +1388,19 @@ IpGraphToLlvmConverter::convert_operation(
   if (is<MemSetNonVolatileOperation>(op))
   {
     return convertMemsetNonVolatileOperation(op, arguments, builder);
+  }
+  if (is<MemMoveNonVolatileOperation>(op))
+  {
+    const auto destOperand = Context_->value(arguments[0]);
+    const auto srcOperand = Context_->value(arguments[1]);
+    const auto lengthOperand = Context_->value(arguments[2]);
+
+    return builder.CreateMemMove(
+        destOperand,
+        ::llvm::MaybeAlign(),
+        srcOperand,
+        ::llvm::MaybeAlign(),
+        lengthOperand);
   }
   if (is<FNegOperation>(op))
   {
@@ -1479,6 +1504,242 @@ IpGraphToLlvmConverter::convert_operation(
         ::llvm::Intrinsic::fmuladd,
         { type },
         { multiplier, multiplicand, summand });
+  }
+  if (is<SMaxOperation>(op))
+  {
+    auto operand1 = Context_->value(arguments[0]);
+    auto operand2 = Context_->value(arguments[1]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(::llvm::Intrinsic::smax, { type }, { operand1, operand2 });
+  }
+  if (is<UMaxOperation>(op))
+  {
+    auto operand1 = Context_->value(arguments[0]);
+    auto operand2 = Context_->value(arguments[1]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(::llvm::Intrinsic::umax, { type }, { operand1, operand2 });
+  }
+  if (is<SMinOperation>(op))
+  {
+    auto operand1 = Context_->value(arguments[0]);
+    auto operand2 = Context_->value(arguments[1]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(::llvm::Intrinsic::smin, { type }, { operand1, operand2 });
+  }
+  if (is<UMinOperation>(op))
+  {
+    auto operand1 = Context_->value(arguments[0]);
+    auto operand2 = Context_->value(arguments[1]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(::llvm::Intrinsic::umin, { type }, { operand1, operand2 });
+  }
+  if (is<FAbsOperation>(op))
+  {
+    auto operand = Context_->value(arguments[0]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(::llvm::Intrinsic::fabs, { type }, { operand });
+  }
+  if (is<FShlOperation>(op))
+  {
+    auto operand1 = Context_->value(arguments[0]);
+    auto operand2 = Context_->value(arguments[1]);
+    auto operand3 = Context_->value(arguments[2]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(
+        ::llvm::Intrinsic::fshl,
+        { type },
+        { operand1, operand2, operand3 });
+  }
+  if (is<FloorOperation>(op))
+  {
+    auto operand = Context_->value(arguments[0]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(::llvm::Intrinsic::floor, { type }, { operand });
+  }
+  if (is<AbsOperation>(op))
+  {
+    auto operand1 = Context_->value(arguments[0]);
+    auto operand2 = Context_->value(arguments[1]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(::llvm::Intrinsic::abs, { type }, { operand1, operand2 });
+  }
+  if (is<CeilOperation>(op))
+  {
+    auto operand = Context_->value(arguments[0]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(::llvm::Intrinsic::ceil, { type }, { operand });
+  }
+  if (is<RIntOperation>(op))
+  {
+    auto operand = Context_->value(arguments[0]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(::llvm::Intrinsic::rint, { type }, { operand });
+  }
+  if (is<TruncIntrinsicOperation>(op))
+  {
+    auto operand = Context_->value(arguments[0]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(::llvm::Intrinsic::trunc, { type }, { operand });
+  }
+  if (is<BSwapOperation>(op))
+  {
+    auto operand = Context_->value(arguments[0]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(::llvm::Intrinsic::bswap, { type }, { operand });
+  }
+  if (is<CtlzOperation>(op))
+  {
+    auto operand = Context_->value(arguments[0]);
+    auto isZeroPoison = Context_->value(arguments[1]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(::llvm::Intrinsic::ctlz, { type }, { operand, isZeroPoison });
+  }
+  if (is<CttzOperation>(op))
+  {
+    auto operand = Context_->value(arguments[0]);
+    auto isZeroPoison = Context_->value(arguments[1]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(::llvm::Intrinsic::cttz, { type }, { operand, isZeroPoison });
+  }
+  if (is<CtpopOperation>(op))
+  {
+    auto operand = Context_->value(arguments[0]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(::llvm::Intrinsic::ctpop, { type }, { operand });
+  }
+  if (is<IsConstantOperation>(op))
+  {
+    auto operand = Context_->value(arguments[0]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(::llvm::Intrinsic::is_constant, { type }, { operand });
+  }
+  if (is<IsFPClassOperation>(op))
+  {
+    auto operand1 = Context_->value(arguments[0]);
+    auto operand2 = Context_->value(arguments[1]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(::llvm::Intrinsic::is_fpclass, { type }, { operand1, operand2 });
+  }
+  if (is<SAddWithOverflowOperation>(op))
+  {
+    auto operand1 = Context_->value(arguments[0]);
+    auto operand2 = Context_->value(arguments[1]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(
+        ::llvm::Intrinsic::sadd_with_overflow,
+        { type },
+        { operand1, operand2 });
+  }
+  if (is<UAddWithOverflowOperation>(op))
+  {
+    auto operand1 = Context_->value(arguments[0]);
+    auto operand2 = Context_->value(arguments[1]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(
+        ::llvm::Intrinsic::uadd_with_overflow,
+        { type },
+        { operand1, operand2 });
+  }
+  if (is<SSubWithOverflowOperation>(op))
+  {
+    auto operand1 = Context_->value(arguments[0]);
+    auto operand2 = Context_->value(arguments[1]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(
+        ::llvm::Intrinsic::ssub_with_overflow,
+        { type },
+        { operand1, operand2 });
+  }
+  if (is<SMulWithOverflowOperation>(op))
+  {
+    auto operand1 = Context_->value(arguments[0]);
+    auto operand2 = Context_->value(arguments[1]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(
+        ::llvm::Intrinsic::smul_with_overflow,
+        { type },
+        { operand1, operand2 });
+  }
+  if (is<RoundOperation>(op))
+  {
+    auto operand = Context_->value(arguments[0]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(::llvm::Intrinsic::round, { type }, { operand });
+  }
+  if (is<UMulWithOverflowOperation>(op))
+  {
+    auto operand1 = Context_->value(arguments[0]);
+    auto operand2 = Context_->value(arguments[1]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(
+        ::llvm::Intrinsic::umul_with_overflow,
+        { type },
+        { operand1, operand2 });
+  }
+  if (is<CopysignOperation>(op))
+  {
+    auto operand1 = Context_->value(arguments[0]);
+    auto operand2 = Context_->value(arguments[1]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(::llvm::Intrinsic::copysign, { type }, { operand1, operand2 });
+  }
+  if (is<PtrMaskOperation>(op))
+  {
+    auto ptrOperand = Context_->value(arguments[0]);
+    auto maskOperand = Context_->value(arguments[1]);
+
+    return builder.CreateIntrinsic(
+        ::llvm::Intrinsic::ptrmask,
+        { ptrOperand->getType(), maskOperand->getType() },
+        { ptrOperand, maskOperand });
   }
 
   JLM_UNREACHABLE(util::strfmt("Unhandled operation type: ", op.debug_string()).c_str());

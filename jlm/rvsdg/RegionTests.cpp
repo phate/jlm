@@ -103,12 +103,12 @@ TEST(RegionTests, Contains)
 
   // Act & Assert
   EXPECT_TRUE(
-      jlm::rvsdg::Region::ContainsNodeType<TestStructuralNode>(graph.GetRootRegion(), false));
+      jlm::rvsdg::Region::containsNodeType<TestStructuralNode>(graph.GetRootRegion(), false));
   EXPECT_TRUE(
-      jlm::rvsdg::Region::ContainsOperation<TestUnaryOperation>(graph.GetRootRegion(), true));
+      jlm::rvsdg::Region::containsOperation<TestUnaryOperation>(graph.GetRootRegion(), true));
   EXPECT_TRUE(
-      jlm::rvsdg::Region::ContainsOperation<TestBinaryOperation>(graph.GetRootRegion(), true));
-  EXPECT_TRUE(!jlm::rvsdg::Region::ContainsOperation<TestOperation>(graph.GetRootRegion(), true));
+      jlm::rvsdg::Region::containsOperation<TestBinaryOperation>(graph.GetRootRegion(), true));
+  EXPECT_TRUE(!jlm::rvsdg::Region::containsOperation<TestOperation>(graph.GetRootRegion(), true));
 }
 
 TEST(RegionTests, IsRootRegion)
