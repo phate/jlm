@@ -46,7 +46,7 @@ ifeq ($(LIT),)
 	@echo "Error: lit is required to run tests. Please install lit (e.g. 'pip install lit' or 'apt install python3-lit') or specify its path with ./configure.sh --lit=<path>." >&2
 	@exit 1
 else
-	$(LIT) -v $(LIT_ARGS) $(LIT_TESTS)
+	$(LIT) -v $(LIT_ARGS) $(if $(filter-out jlc,$(JLC)),-Djlc=$(abspath $(JLC))) $(LIT_TESTS)
 endif
 
 check: check-lit
