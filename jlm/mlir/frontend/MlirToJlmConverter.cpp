@@ -26,6 +26,8 @@
 #include <mlir/Parser/Parser.h>
 #include <mlir/Transforms/TopologicalSortUtils.h>
 
+#include <unordered_set>
+
 namespace jlm::mlir
 {
 
@@ -1256,11 +1258,15 @@ MlirToJlmConverter::ConvertOperation(
   else if (auto mlirMatch = ::mlir::dyn_cast<::mlir::rvsdg::Match>(&mlirOperation))
   {
     std::unordered_map<uint64_t, uint64_t> mapping;
+    std::unordered_set<uint64_t> alternatives;
     uint64_t defaultAlternative = 0;
     for (auto & attr : mlirMatch.getMapping())
     {
       JLM_ASSERT(attr.isa<::mlir::rvsdg::MatchRuleAttr>());
       auto matchRuleAttr = attr.cast<::mlir::rvsdg::MatchRuleAttr>();
+      // The dialect emits one rule per matched value, so several rules can share a destination.
+      // The control type's width is the number of distinct destinations, not the number of rules.
+      alternatives.insert(matchRuleAttr.getIndex());
       if (matchRuleAttr.isDefault())
       {
         defaultAlternative = matchRuleAttr.getIndex();
@@ -1271,10 +1277,10 @@ MlirToJlmConverter::ConvertOperation(
     }
 
     return { rvsdg::MatchOperation::Create(
-        *(inputs[0]),                 // predicate
-        mapping,                      // mapping
-        defaultAlternative,           // defaultAlternative
-        mlirMatch.getMapping().size() // numAlternatives
+        *(inputs[0]),       // predicate
+        mapping,            // mapping
+        defaultAlternative, // defaultAlternative
+        alternatives.size() // numAlternatives
         ) };
   }
   else if (auto selectOp = ::mlir::dyn_cast<::mlir::arith::SelectOp>(&mlirOperation))
