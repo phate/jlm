@@ -5,6 +5,7 @@
  */
 
 #include <jlm/llvm/ir/attribute.hpp>
+#include <jlm/llvm/ir/operators/AggregateOperations.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
@@ -799,6 +800,20 @@ MlirToJlmConverter::ConvertOperation(
         rvsdgRegion,
         std::vector(inputs.begin(), inputs.end()),
         ConvertType(StructOp.getOutput().getType())) };
+  }
+
+  else if (auto extractOp = ::mlir::dyn_cast<::mlir::LLVM::ExtractValueOp>(&mlirOperation))
+  {
+    // The member indices live in the op's DenseI64ArrayAttr, not among its operands.
+    std::vector<unsigned> indices;
+    for (auto position : extractOp.getPosition())
+    {
+      indices.push_back(static_cast<unsigned>(position));
+    }
+    return rvsdg::outputs(&rvsdg::CreateOpNode<llvm::ExtractValueOperation>(
+        std::vector(inputs.begin(), inputs.end()),
+        ConvertType(extractOp.getContainer().getType()),
+        indices));
   }
 
   else if (auto ZeroOp = ::mlir::dyn_cast<::mlir::LLVM::ZeroOp>(&mlirOperation))

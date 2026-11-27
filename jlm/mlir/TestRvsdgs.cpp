@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/operators/AggregateOperations.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/ConversionOperations.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
@@ -711,6 +712,74 @@ ConstantStructTest::SetupRvsdg()
   this->literalDelta = literalDelta;
   this->identifiedStruct = TryGetOwnerNode<SimpleNode>(identifiedConstant);
   this->literalStruct = TryGetOwnerNode<SimpleNode>(literalConstant);
+
+  return module;
+}
+
+std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
+ExtractValueTest::SetupRvsdg()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  auto module = LlvmRvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto graph = &module->Rvsdg();
+
+  auto pointType = StructType::CreateLiteral({ BitType::Create(32), BitType::Create(32) }, false);
+
+  // A global int32_t whose initializer builds struct point { 1, 2 } and reads member y.
+  auto pointDelta = DeltaNode::Create(
+      &graph->GetRootRegion(),
+      LlvmDeltaOperation::Create(BitType::Create(32), "y", Linkage::externalLinkage, "", false, 4));
+  auto x = &IntegerConstantOperation::Create(*pointDelta->subregion(), { 32, 1 });
+  auto y = &IntegerConstantOperation::Create(*pointDelta->subregion(), { 32, 2 });
+  auto & pointConstant = ConstantStructOperation::Create(
+      *pointDelta->subregion(),
+      { x->output(0), y->output(0) },
+      pointType);
+  auto & memberExtract = CreateOpNode<llvm::ExtractValueOperation>(
+      std::vector<rvsdg::Output *>{ &pointConstant },
+      pointType,
+      std::vector<unsigned>{ 1 });
+  auto & pointOutput = pointDelta->finalize(memberExtract.output(0));
+  GraphExport::Create(pointOutput, "y");
+
+  // The same for points[1].y: build struct point[2] { { 1, 2 }, { 3, 4 } } and read [1].y, which
+  // exercises the two-index form of the extract.
+  auto pointsDelta = DeltaNode::Create(
+      &graph->GetRootRegion(),
+      LlvmDeltaOperation::Create(
+          BitType::Create(32),
+          "py",
+          Linkage::externalLinkage,
+          "",
+          false,
+          4));
+  auto firstX = &IntegerConstantOperation::Create(*pointsDelta->subregion(), { 32, 1 });
+  auto firstY = &IntegerConstantOperation::Create(*pointsDelta->subregion(), { 32, 2 });
+  auto secondX = &IntegerConstantOperation::Create(*pointsDelta->subregion(), { 32, 3 });
+  auto secondY = &IntegerConstantOperation::Create(*pointsDelta->subregion(), { 32, 4 });
+  auto & firstConstant = ConstantStructOperation::Create(
+      *pointsDelta->subregion(),
+      { firstX->output(0), firstY->output(0) },
+      pointType);
+  auto & secondConstant = ConstantStructOperation::Create(
+      *pointsDelta->subregion(),
+      { secondX->output(0), secondY->output(0) },
+      pointType);
+  std::vector<rvsdg::Output *> pointElements = { &firstConstant, &secondConstant };
+  auto pointsConstant = ConstantDataArrayOperation::Create(pointElements);
+  auto & elementMemberExtract = CreateOpNode<llvm::ExtractValueOperation>(
+      std::vector<rvsdg::Output *>{ pointsConstant },
+      ArrayType::Create(pointType, 2),
+      std::vector<unsigned>{ 1, 1 });
+  auto & pointsOutput = pointsDelta->finalize(elementMemberExtract.output(0));
+  GraphExport::Create(pointsOutput, "py");
+
+  this->pointDelta = pointDelta;
+  this->pointsDelta = pointsDelta;
+  this->memberExtract = &memberExtract;
+  this->elementMemberExtract = &elementMemberExtract;
 
   return module;
 }

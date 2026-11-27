@@ -471,6 +471,37 @@ public:
   jlm::rvsdg::SimpleNode * literalStruct;
 };
 
+/** \brief ExtractValueTest class
+ *
+ * This class sets up an RVSDG with two int32_t globals:
+ *
+ * \code{.c}
+ *   struct point { int32_t x; int32_t y; };
+ *   int32_t y  = ((struct point) { 1, 2 }).y;
+ *   int32_t py = ((struct point[2]) { { 1, 2 }, { 3, 4 } })[1].y;
+ * \endcode
+ *
+ * The reads are \ref jlm::llvm::ExtractValueOperation nodes, whose indices the MLIR conversion
+ * keeps in LLVM::ExtractValueOp's DenseI64ArrayAttr; the two depths pin a struct member and an
+ * array element followed by a member. The extracts sit inside the deltas because a delta output is
+ * an address, not an aggregate value.
+ */
+class ExtractValueTest final : public jlm::llvm::RvsdgTest
+{
+private:
+  std::unique_ptr<jlm::llvm::LlvmRvsdgModule>
+  SetupRvsdg() override;
+
+public:
+  jlm::rvsdg::DeltaNode * pointDelta;
+
+  jlm::rvsdg::DeltaNode * pointsDelta;
+
+  jlm::rvsdg::SimpleNode * memberExtract;
+
+  jlm::rvsdg::SimpleNode * elementMemberExtract;
+};
+
 /** \brief MixedArrayTest class
  *
  * This class sets up an RVSDG representing the following declarations:
